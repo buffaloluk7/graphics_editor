@@ -8,5 +8,6 @@ namespace GraphicsEditor.Business.Domain
 {
     public class Class1
     {
+        //
     }
 }
