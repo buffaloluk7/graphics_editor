@@ -30,6 +30,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -44,10 +45,10 @@
     <Compile Include="Interfaces\ICloneable.cs" />
     <Compile Include="Interfaces\IComponent.cs" />
     <Compile Include="Interfaces\IDrawable.cs" />
-    <Compile Include="Models\Ellipsis.cs" />
+    <Compile Include="Models\MyEllipsis.cs" />
     <Compile Include="Models\GeometryObjectBase.cs" />
-    <Compile Include="Models\Rectangle.cs" />
-    <Compile Include="Models\Triangle.cs" />
+    <Compile Include="Models\MyRectangle.cs" />
+    <Compile Include="Models\MyTriangle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

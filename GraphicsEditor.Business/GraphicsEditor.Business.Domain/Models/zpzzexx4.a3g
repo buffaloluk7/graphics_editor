@@ -8,8 +8,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Drawing;
+using System.Windows.Shapes;
 
-public class Triangle : GeometryObjectBase
+public class Ellipsis : GeometryObjectBase
 {
+    public Ellipse Ellipse { get; private set; }
+
+    public Ellipsis(int width, int height, Point position, Pen pen)
+    {
+        Ellipse = new Ellipse
+        {
+            Stroke = pen.Brush,
+            
+        }
+    }
 }
 

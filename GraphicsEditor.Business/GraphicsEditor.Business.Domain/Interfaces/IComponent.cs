@@ -8,16 +8,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 
-public interface IComponent  : IDrawable
+public interface IComponent
 {
 	void Add(IComponent Component);
 
 	void Remove(IComponent Component);
 
-	void Move();
+	void Move(Point newPosition);
 
-	void Resize();
-
+	void Resize(int newWidth, int newHeight);
 }
 

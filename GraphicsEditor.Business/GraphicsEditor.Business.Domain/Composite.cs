@@ -8,39 +8,38 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 
 public class Composite : IComponent
 {
-	public virtual object Children
-	{
-		get;
-		set;
-	}
+    private List<IComponent> children;
 
-	public virtual void Add(IComponent Component)
-	{
-		throw new System.NotImplementedException();
-	}
+    public Composite()
+    {
+        children = new List<IComponent>();
+    }
 
-	public virtual void Remove(IComponent Component)
-	{
-		throw new System.NotImplementedException();
-	}
+    public virtual void Add(IComponent component)
+    {
+        children.Add(component);
+    }
 
-	public virtual void Draw()
-	{
-		throw new System.NotImplementedException();
-	}
+    public virtual void Remove(IComponent component)
+    {
+        children.Remove(component);
+    }
 
-	public virtual void Move()
-	{
-		throw new System.NotImplementedException();
-	}
+    public void Move(Point newPosition)
+    {
+        foreach (var component in this.children)
+        {
+            component.Move(newPosition);
+        }
+    }
 
-	public virtual void Resize()
-	{
-		throw new System.NotImplementedException();
-	}
-
+    public void Resize(int newWidth, int newHeight)
+    {
+        throw new NotImplementedException();
+    }
 }
 

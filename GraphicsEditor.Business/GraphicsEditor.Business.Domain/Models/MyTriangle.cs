@@ -8,8 +8,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Shapes;
 
-public class Ellipsis : GeometryObjectBase
+public class MyTriangle : GeometryObjectBase
 {
+    public override void Add(IComponent component)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Remove(IComponent component)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Draw()
+    {
+        throw new NotImplementedException();
+    }
 }
 

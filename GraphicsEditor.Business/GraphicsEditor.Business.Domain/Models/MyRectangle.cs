@@ -8,41 +8,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Shapes;
 
-public class Composite : IComponent
+public class MyRectangle : GeometryObjectBase
 {
-    private List<IComponent> children;
-
-    public Composite()
+    public Rectangle Rectangle
     {
-        children = new List<IComponent>();
+        get
+        {
+            return base.shape as Rectangle;
+        }
+
+        private set;
     }
 
-	public virtual void Add(IComponent component)
-	{
-        children.Add(component);
-	}
-
-	public virtual void Remove(IComponent component)
-	{
-        children.Remove(component);
-	}
-
-	public virtual void Draw()
-	{
-		foreach (var component in this.children)
-        {
-            component.Draw();
-        }
-	}
-
-
-    public void Move()
+    public override void Add(IComponent component)
     {
         throw new NotImplementedException();
     }
 
-    public void Resize()
+    public override void Remove(IComponent component)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Draw()
     {
         throw new NotImplementedException();
     }

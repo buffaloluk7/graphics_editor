@@ -9,47 +9,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.Windows.Shapes;
+using System.Windows;
 
-public abstract class GeometryObjectBase : ICloneable, IComponent
+public abstract class GeometryObjectBase : ICloneable, IComponent, IDrawable
 {
-	public virtual int Width
-	{
-		get;
-		set;
-	}
-
-	public virtual int Height
-	{
-		get;
-		set;
-	}
-
-	public virtual Pen DrawingPen
-	{
-		get;
-		set;
-	}
-
-	public virtual Point Position
-	{
-		get;
-		set;
-	}
+    protected Shape shape;
 
 	public virtual ICloneable Clone()
 	{
         return this.MemberwiseClone() as ICloneable;
 	}
 
-	public abstract void Add(IComponent Component);
+	public abstract void Add(IComponent component);
 
-	public abstract void Remove(IComponent Component);
+	public abstract void Remove(IComponent component);
 
 	public abstract void Draw();
 
-	public abstract void Move();
+    public void Move(Point newPosition)
+    {
+        shape.Margin = new Thickness(newPosition.X, newPosition.Y, 0, 0);
+    }
 
-	public abstract void Resize();
-
+    public void Resize(int newWidth, int newHeight)
+    {
+        shape.Width = newWidth;
+        shape.Height = newHeight;
+    }
 }
 
