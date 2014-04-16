@@ -141,6 +141,10 @@
       <Project>{69f6b55c-0177-4934-80ad-942e4180d9b2}</Project>
       <Name>GraphicsEditor.Business.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\GraphicsEditor.Business\GraphicsEditor.Business.Domain\GraphicsEditor.Business.Domain.csproj">
+      <Project>{31ab0eda-6f92-4173-9f71-fd2cf61680d3}</Project>
+      <Name>GraphicsEditor.Business.Domain</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets" Condition="Exists('..\..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" />

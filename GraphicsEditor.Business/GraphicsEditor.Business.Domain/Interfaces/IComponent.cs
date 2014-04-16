@@ -6,7 +6,8 @@ public interface IComponent
 
 	void Remove(IComponent Component);
 
-	void Move(Point location);
+	void Move(Vector translation);
 
-    void Resize(Point size);
+    // resizing is only available for the bottom right corner, therefore we can describe it with a vector
+    void Resize(Vector translation);
 }

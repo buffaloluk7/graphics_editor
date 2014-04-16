@@ -21,15 +21,17 @@ public class Composite : IComponent
         children.Remove(component);
     }
 
-    public void Move(Point location)
+    public void Move(Vector translation)
     {
-        foreach (var component in this.children)
+        // maybe use parallels here
+        foreach(var child in children)
         {
-            component.Move(location);
+            child.Move(translation);
         }
     }
 
-    public void Resize(Point size)
+    // resizing is difficult, because some objects need to be moved as well
+    public void Resize(Vector translation)
     {
         throw new NotImplementedException();
     }

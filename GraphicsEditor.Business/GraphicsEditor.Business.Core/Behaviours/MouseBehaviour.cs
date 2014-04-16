@@ -198,7 +198,7 @@ namespace GraphicsEditor.Business.Core.Behaviours
         public static ICommand GetMouseMoveCommand(UIElement element)
         {
             return (ICommand)element.GetValue(MouseMoveCommandProperty);
-        }
+        }       
 
         #endregion
 
