@@ -14,6 +14,8 @@ namespace GraphicsEditor.Business.Core.ViewModels
     public class MainWindowViewModel : ObservableObject
     {
         private bool mouseDown = false;
+        private bool ctrlDown = false;
+        private bool shiftDown = false;
 
         private List<IComponent> shapes;
 
@@ -50,7 +52,21 @@ namespace GraphicsEditor.Business.Core.ViewModels
             private set;
         }
 
+        public RelayCommand<KeyEventArgs> KeyUpCommand
+        {
+            get;
+            private set;
+        }
+
+        public RelayCommand<KeyEventArgs> KeyDownCommand
+        {
+            get;
+            private set;
+        }
+
         #endregion
+
+        #region ExecuteMouse
 
         private void ExecuteMouseUp(MouseEventArgs e)
         {
@@ -61,11 +77,6 @@ namespace GraphicsEditor.Business.Core.ViewModels
         private void ExecuteMouseDown(MouseEventArgs e)
         {
             mouseDown = true;
-
-            if (selection != null)
-            {
-                return;
-            } 
         }
 
         // mouse move event of the canvas
@@ -73,6 +84,8 @@ namespace GraphicsEditor.Business.Core.ViewModels
         {
             mousePosition = e.GetPosition(null);
 
+            // we are not interested in mouse move events if the mouse is not pressed
+            // we just want the current mouse position if we are dragging something (selection != null) so lets exit here
             if (!mouseDown || selection != null)
             {
                 return;
@@ -104,6 +117,36 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 currentShape.Height = mousePosition.Y - currentShape.Margin.Top;
             }
         }
+        #endregion
+
+        #region ExecuteKeyUpDown
+        private void ExecuteKeyDown(KeyEventArgs e)
+        {
+           switch(e.Key)
+           {
+               case Key.LeftCtrl:
+                   ctrlDown = true;
+                   break;
+
+               case Key.LeftShift:
+                   shiftDown = true;
+                   break;
+           }
+        }
+        private void ExecuteKeyUp(KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.LeftCtrl:
+                    ctrlDown = false;
+                    break;
+
+                case Key.LeftShift:
+                    shiftDown = false;
+                    break;
+            }
+        }
+        #endregion
 
         private void ElementMouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -140,6 +183,9 @@ namespace GraphicsEditor.Business.Core.ViewModels
             this.MouseUpCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseUp);
             this.MouseDownCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseDown);
             this.MouseMoveCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseMove);
+
+            this.KeyDownCommand = new RelayCommand<KeyEventArgs>(this.ExecuteKeyDown);
+            this.KeyUpCommand = new RelayCommand<KeyEventArgs>(this.ExecuteKeyUp);
         }
     }
 }

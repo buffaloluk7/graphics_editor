@@ -17,6 +17,8 @@
                             Behaviours:MouseBehaviour.MouseUpCommand="{Binding MouseUpCommand}" 
                             Behaviours:MouseBehaviour.MouseDownCommand="{Binding MouseDownCommand}" 
                             Behaviours:MouseBehaviour.MouseMoveCommand="{Binding MouseMoveCommand}"
+                            Behaviours:InputBehaviour.KeyDownCommand="{Binding KeyDownCommand}"
+                            Behaviours:InputBehaviour.KeyUpCommand="{Binding KeyUpCommand}"
                             />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
