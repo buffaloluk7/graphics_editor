@@ -1,6 +1,7 @@
 ﻿using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -19,12 +20,17 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
         private List<IComponent> shapes;
 
-        private Shape selection;
+        private Dictionary<Shape, Vector> selection;
+
         private Shape currentShape;
 
         private Point mousePosition;
 
-        Vector vectorToOrigin;
+        public ObservableCollection<string> Selection
+        {
+            get;
+            set;
+        }
 
         public ObservableCollection<UIElement> Elements
         {
@@ -32,7 +38,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
             set;
         }
 
-        #region RelayCommands
+        #region Commands
 
         public RelayCommand<MouseEventArgs> MouseUpCommand
         {
@@ -64,6 +70,18 @@ namespace GraphicsEditor.Business.Core.ViewModels
             private set;
         }
 
+        public RelayCommand GroupSelectionCommand
+        {
+            get;
+            private set;
+        }
+
+        public RelayCommand UnGroupSelectionCommand
+        {
+            get;
+            private set;
+        }
+
         #endregion
 
         #region ExecuteMouse
@@ -86,7 +104,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
             // we are not interested in mouse move events if the mouse is not pressed
             // we just want the current mouse position if we are dragging something (selection != null) so lets exit here
-            if (!mouseDown || selection != null)
+            if (!mouseDown || this.selection.Count > 0)
             {
                 return;
             }
@@ -104,6 +122,9 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 };
 
                 this.Elements.Add(currentShape);
+                var holder = new ShapeBase(currentShape);
+
+                shapes.Add(holder);
 
                 // register events on our shape
                 currentShape.MouseDown += ElementMouseDown;
@@ -113,8 +134,20 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
             if (currentShape != null)
             {
-                currentShape.Width = mousePosition.X - currentShape.Margin.Left;
-                currentShape.Height = mousePosition.Y - currentShape.Margin.Top;
+                var w = mousePosition.X - currentShape.Margin.Left;
+
+                currentShape.Width = (w < 0) ? currentShape.Width : w;
+
+                if (shiftDown)
+                {
+                    var h = mousePosition.X - currentShape.Margin.Left;
+                    currentShape.Height = (h < 0) ? currentShape.Height : h;
+                }
+                else
+                {
+                    var h = mousePosition.Y - currentShape.Margin.Top;
+                    currentShape.Height = (h < 0) ? currentShape.Height : h;
+                }
             }
         }
         #endregion
@@ -150,35 +183,113 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
         private void ElementMouseDown(object sender, MouseButtonEventArgs e)
         {
-            this.selection = (Shape)sender;
-            (sender as Shape).Stroke = Brushes.Red;
+            // search clicked element in hierachie -> how ??
+            // outline all elements of composition -> how ?? :D
+            var clickedShape = sender as Shape;
 
-            Point origin = new Point(selection.Margin.Left, selection.Margin.Top);
-            vectorToOrigin = Point.Subtract(origin, mousePosition);
+            if (ctrlDown)
+            {
+                if (this.selection.ContainsKey(clickedShape))
+                {
+                    this.removeFromSelection(clickedShape);
+                    return;
+                }
+            }
+            else
+            {
+                this.clearSelection();
+            }
+
+            this.addToSelection(clickedShape);
         }
 
         private void ElementMouseUp(object sender, MouseButtonEventArgs e)
         {
-            this.selection = null;
-            (sender as Shape).Stroke = Brushes.Black;
+            if (ctrlDown)
+            {
+                return;
+            }
 
-            vectorToOrigin = new Vector(0, 0);
+            this.clearSelection();
         }
 
-        // move event of every element in the canvas
+          // move event of every element in the canvas
         private void ElementMove(object sender, MouseEventArgs e)
         {
-            if (selection != null)
+            if (ctrlDown)
             {
-                Point newPos = Point.Add(mousePosition, vectorToOrigin);
-                selection.Margin = new Thickness(newPos.X, newPos.Y, 0, 0);
+                return;
             }
+
+            if (this.selection.Count > 1)
+            {
+                return;
+            }
+
+            if (this.selection.Count > 0)
+            {
+                foreach(var el in selection)
+                {
+                    Point newPos = Point.Add(mousePosition, el.Value);
+                    el.Key.Margin = new Thickness(newPos.X, newPos.Y, 0, 0);
+                }
+            }
+        }
+
+        private void removeFromSelection(Shape shape)
+        {
+            this.selection.Remove(shape);
+            this.Selection.Remove(shape.ToString());
+            shape.Stroke = Brushes.Black;
+        }
+
+        private void addToSelection(Shape shape)
+        {
+            Point origin = new Point(shape.Margin.Left, shape.Margin.Top);
+            Vector vectorToOrigin = Point.Subtract(origin, mousePosition);
+
+            this.selection.Add(shape, vectorToOrigin);
+            this.Selection.Add(shape.ToString());
+            shape.Stroke = Brushes.Red;
+        }
+
+        private void clearSelection()
+        {
+            foreach (var el in this.selection)
+            {
+                el.Key.Stroke = Brushes.Black;
+            }
+
+            this.selection.Clear();
+            this.Selection.Clear();
+        }
+
+        private void ExecuteGroupSelectionCommand()
+        {
+            Composite composite = new Composite();
+
+            foreach(var el in this.selection)
+            {
+                var component = this.shapes.FirstOrDefault(S => (S as ShapeBase).Shape == el.Key);
+
+                this.shapes.Remove(component);
+                composite.Add(component);
+            }
+
+            shapes.Add(composite);
+        }
+
+        private void ExecuteUnGroupSelectionCommand()
+        {
+
         }
 
         public MainWindowViewModel() 
         {
             this.Elements = new ObservableCollection<UIElement>();
+            this.Selection = new ObservableCollection<string>();
             this.shapes = new List<IComponent>();
+            this.selection = new Dictionary<Shape, Vector>();
 
             this.MouseUpCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseUp);
             this.MouseDownCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseDown);
@@ -186,6 +297,9 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
             this.KeyDownCommand = new RelayCommand<KeyEventArgs>(this.ExecuteKeyDown);
             this.KeyUpCommand = new RelayCommand<KeyEventArgs>(this.ExecuteKeyUp);
+
+            this.GroupSelectionCommand = new RelayCommand(this.ExecuteGroupSelectionCommand);
+            this.UnGroupSelectionCommand = new RelayCommand(this.ExecuteUnGroupSelectionCommand);
         }
     }
 }

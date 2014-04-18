@@ -11,6 +11,14 @@ public class ShapeBase : IComponent
         this.shape = shape;
     }
 
+    public Shape Shape
+    {
+        get
+        {
+            return shape;
+        }
+    }
+
     public void Add(IComponent Component)
     {
         throw new NotImplementedException();

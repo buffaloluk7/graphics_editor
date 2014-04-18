@@ -3,13 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:Behaviours="clr-namespace:GraphicsEditor.Business.Core.Behaviours;assembly=GraphicsEditor.Business.Core"
         Title="MainWindow"
-        Height="350"
-        Width="525"
-        DataContext="{Binding MainWindow, Mode=OneWay, Source={StaticResource Locator}}">
+        Height="800"
+        Width="1200"
+        DataContext="{Binding MainWindow, Mode=OneWay, Source={StaticResource Locator}}"
+        Behaviours:InputBehaviour.KeyDownCommand="{Binding KeyDownCommand}"
+        Behaviours:InputBehaviour.KeyUpCommand="{Binding KeyUpCommand}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition />
+            <RowDefinition Height="40"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="200" />
+        </Grid.ColumnDefinitions>
         <ItemsControl ItemsSource="{Binding Path=Elements}" Grid.Row="0">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -17,11 +24,16 @@
                             Behaviours:MouseBehaviour.MouseUpCommand="{Binding MouseUpCommand}" 
                             Behaviours:MouseBehaviour.MouseDownCommand="{Binding MouseDownCommand}" 
                             Behaviours:MouseBehaviour.MouseMoveCommand="{Binding MouseMoveCommand}"
-                            Behaviours:InputBehaviour.KeyDownCommand="{Binding KeyDownCommand}"
-                            Behaviours:InputBehaviour.KeyUpCommand="{Binding KeyUpCommand}"
                             />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
         </ItemsControl>
+        <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <Button Content="Group" Command="{Binding GroupSelectionCommand}" Margin="5" Padding="5"/>
+            <Button Content="Ungroup" Command="{Binding UnGroupSelectionCommand}" Margin="5" Padding="5"/>
+        </StackPanel>
+        <ListView Grid.Column="1" ItemsSource="{Binding Selection, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}">
+            
+        </ListView>
     </Grid>
 </Window>
