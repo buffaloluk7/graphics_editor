@@ -13,7 +13,7 @@
             <RowDefinition />
             <RowDefinition Height="40"/>
         </Grid.RowDefinitions>
-        <ItemsControl ItemsSource="{Binding Path=Elements}" Grid.Row="0">
+        <ItemsControl ItemsSource="{Binding Path=CanvasElements}" Grid.Row="0">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <Canvas Background="White"

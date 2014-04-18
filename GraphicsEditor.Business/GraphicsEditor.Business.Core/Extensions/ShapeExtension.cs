@@ -10,12 +10,12 @@ namespace GraphicsEditor.Business.Core.Extensions
 {
     public static class ShapeExtension
     {
-        public static void Selected(this Shape shape)
+        public static void DisplaySelectionArea(this Shape shape)
         {
             shape.Stroke = Brushes.Black;
         }
 
-        public static void DeSelected(this Shape shape)
+        public static void HideSelectionArea(this Shape shape)
         {
             shape.Stroke = Brushes.Transparent;
         }
