@@ -9,28 +9,26 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using GraphicsEditor.Business.Domain.Models;
+using GraphicsEditor.Business.Core.Extensions;
 
 namespace GraphicsEditor.Business.Core.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
-        private bool mouseDown = false;
-        private bool ctrlDown = false;
-        private bool shiftDown = false;
+        private bool isMouseDown = false;
+        private bool isCtrlDown = false;
+        private bool isShiftDown = false;
+        private bool hoverOverAnyElement = false;
 
-        private List<IComponent> shapes;
+        private Dictionary<Shape, ComponentBase> shapes;
 
-        private Dictionary<Shape, Vector> selection;
+        private List<Shape> selection;
 
         private Shape currentShape;
 
+        private Point clickedMousePosition;
         private Point mousePosition;
-
-        public ObservableCollection<string> Selection
-        {
-            get;
-            set;
-        }
 
         public ObservableCollection<UIElement> Elements
         {
@@ -88,30 +86,36 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
         private void ExecuteMouseUp(MouseEventArgs e)
         {
-            mouseDown = false;
+            isMouseDown = false;
             currentShape = null;
         }
 
         private void ExecuteMouseDown(MouseEventArgs e)
         {
-            mouseDown = true;
+            isMouseDown = true;
+
+            if (!hoverOverAnyElement)
+            {
+                this.clearSelection();
+            }
         }
 
         // mouse move event of the canvas
         private void ExecuteMouseMove(MouseEventArgs e)
         {
+            // update position
             mousePosition = e.GetPosition(null);
 
             // we are not interested in mouse move events if the mouse is not pressed
             // we just want the current mouse position if we are dragging something (selection != null) so lets exit here
-            if (!mouseDown || this.selection.Count > 0)
+            if (!isMouseDown || selection.Count > 0)
             {
                 return;
             }
 
-            if (currentShape == null)
+            if (this.currentShape == null)
             {               
-                currentShape = new Ellipse
+                var shape = new Ellipse
                 {
                     Stroke = Brushes.Black,
                     StrokeThickness = 1,
@@ -121,35 +125,55 @@ namespace GraphicsEditor.Business.Core.ViewModels
                     Fill = Brushes.Transparent
                 };
 
-                this.Elements.Add(currentShape);
-                var holder = new ShapeBase(currentShape);
+                var leaf = new Leaf(shape);
 
-                shapes.Add(holder);
+                // register events on the selectionArea
+                leaf.SelectionArea.MouseDown += ElementMouseDown;
+                leaf.SelectionArea.MouseUp += ElementMouseUp;
+                leaf.SelectionArea.MouseMove += ElementMove;
 
-                // register events on our shape
-                currentShape.MouseDown += ElementMouseDown;
-                currentShape.MouseUp += ElementMouseUp;
-                currentShape.MouseMove += ElementMove;
+                leaf.SelectionArea.MouseEnter += ElementMouseEnter;
+                leaf.SelectionArea.MouseLeave += ElementMouseLeave;
+
+                // make the selectionarea invisible
+                leaf.SelectionArea.Stroke = Brushes.Transparent;
+
+                // register the relationship between the selectionArea of the shape and the element in the hierachy
+                shapes.Add(leaf.SelectionArea, leaf);
+
+                // add both elements to the canvas
+                this.Elements.Add(shape);
+                this.Elements.Add(leaf.SelectionArea);
+
+                this.currentShape = leaf.SelectionArea;
             }
 
             if (currentShape != null)
             {
-                var w = mousePosition.X - currentShape.Margin.Left;
+                // find component for selection
+                ComponentBase component;
+                shapes.TryGetValue(currentShape, out component);
 
-                currentShape.Width = (w < 0) ? currentShape.Width : w;
+                Point topRight = new Point(currentShape.Margin.Left, currentShape.Margin.Top);
 
-                if (shiftDown)
+                Vector toBottomRight = new Vector(currentShape.Width, currentShape.Height);
+                Vector topRightToMouse = Point.Subtract(mousePosition, topRight);
+                Vector translation;
+
+                // force square if shift down
+                if (isShiftDown)
                 {
-                    var h = mousePosition.X - currentShape.Margin.Left;
-                    currentShape.Height = (h < 0) ? currentShape.Height : h;
+                    topRightToMouse.Y = topRightToMouse.X;
                 }
-                else
-                {
-                    var h = mousePosition.Y - currentShape.Margin.Top;
-                    currentShape.Height = (h < 0) ? currentShape.Height : h;
-                }
+
+                translation = Vector.Subtract(topRightToMouse, toBottomRight);
+
+                // get the current absolute position of the bottom right corner of the selectionArea
+                component.Resize(translation);
             }
         }
+
+
         #endregion
 
         #region ExecuteKeyUpDown
@@ -158,11 +182,11 @@ namespace GraphicsEditor.Business.Core.ViewModels
            switch(e.Key)
            {
                case Key.LeftCtrl:
-                   ctrlDown = true;
+                   isCtrlDown = true;
                    break;
 
                case Key.LeftShift:
-                   shiftDown = true;
+                   isShiftDown = true;
                    break;
            }
         }
@@ -171,112 +195,88 @@ namespace GraphicsEditor.Business.Core.ViewModels
             switch (e.Key)
             {
                 case Key.LeftCtrl:
-                    ctrlDown = false;
+                    isCtrlDown = false;
                     break;
 
                 case Key.LeftShift:
-                    shiftDown = false;
+                    isShiftDown = false;
                     break;
             }
         }
         #endregion
 
+        // these methods are only registered on the selection rectangles
         private void ElementMouseDown(object sender, MouseButtonEventArgs e)
         {
-            // search clicked element in hierachie -> how ??
-            // outline all elements of composition -> how ?? :D
-            var clickedShape = sender as Shape;
+            clickedMousePosition = e.GetPosition(null);
+            var shape = sender as Shape;
 
-            if (ctrlDown)
+            if (selection.Contains(shape))
             {
-                if (this.selection.ContainsKey(clickedShape))
-                {
-                    this.removeFromSelection(clickedShape);
-                    return;
-                }
-            }
-            else
-            {
-                this.clearSelection();
+                return;
             }
 
-            this.addToSelection(clickedShape);
+            shape.Selected();
+            selection.Add(shape);
         }
 
         private void ElementMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (ctrlDown)
-            {
-                return;
-            }
+            var shape = sender as Shape;
 
-            this.clearSelection();
+            if (!isCtrlDown)
+            {
+                this.clearSelection();
+            }
         }
 
-          // move event of every element in the canvas
         private void ElementMove(object sender, MouseEventArgs e)
         {
-            if (ctrlDown)
+            // just hovering over an element? get out of here
+            if (!isMouseDown)
             {
                 return;
             }
 
-            if (this.selection.Count > 1)
+            Vector translation = Point.Subtract(mousePosition, clickedMousePosition);
+
+            foreach(Shape shape in selection)
+            {
+                ComponentBase component;
+                shapes.TryGetValue(shape, out component);
+
+                component.Move(translation);
+            }
+
+            clickedMousePosition = mousePosition;
+        }
+
+        // disable the selection on leave
+        private void ElementMouseLeave(object sender, MouseEventArgs e)
+        {
+            this.hoverOverAnyElement = false;
+            var shape = sender as Shape;
+
+            // if shape is selected, do not remove visual selection from shape
+            if (selection.Contains(shape))
             {
                 return;
             }
 
-            if (this.selection.Count > 0)
-            {
-                foreach(var el in selection)
-                {
-                    Point newPos = Point.Add(mousePosition, el.Value);
-                    el.Key.Margin = new Thickness(newPos.X, newPos.Y, 0, 0);
-                }
-            }
+            shape.DeSelected();
         }
 
-        private void removeFromSelection(Shape shape)
+        // display the selection on hover
+        private void ElementMouseEnter(object sender, MouseEventArgs e)
         {
-            this.selection.Remove(shape);
-            this.Selection.Remove(shape.ToString());
-            shape.Stroke = Brushes.Black;
+            this.hoverOverAnyElement = true;
+            (sender as Shape).Selected();
         }
 
-        private void addToSelection(Shape shape)
-        {
-            Point origin = new Point(shape.Margin.Left, shape.Margin.Top);
-            Vector vectorToOrigin = Point.Subtract(origin, mousePosition);
-
-            this.selection.Add(shape, vectorToOrigin);
-            this.Selection.Add(shape.ToString());
-            shape.Stroke = Brushes.Red;
-        }
-
-        private void clearSelection()
-        {
-            foreach (var el in this.selection)
-            {
-                el.Key.Stroke = Brushes.Black;
-            }
-
-            this.selection.Clear();
-            this.Selection.Clear();
-        }
 
         private void ExecuteGroupSelectionCommand()
         {
-            Composite composite = new Composite();
 
-            foreach(var el in this.selection)
-            {
-                var component = this.shapes.FirstOrDefault(S => (S as ShapeBase).Shape == el.Key);
-
-                this.shapes.Remove(component);
-                composite.Add(component);
-            }
-
-            shapes.Add(composite);
         }
 
         private void ExecuteUnGroupSelectionCommand()
@@ -284,20 +284,37 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
         }
 
+        private void clearSelection()
+        {
+            foreach (var el in this.selection)
+            {
+                el.DeSelected();
+            }
+
+            this.selection.Clear();
+        }
+
         public MainWindowViewModel() 
         {
+            // holds all elements displayed in the canvas
             this.Elements = new ObservableCollection<UIElement>();
-            this.Selection = new ObservableCollection<string>();
-            this.shapes = new List<IComponent>();
-            this.selection = new Dictionary<Shape, Vector>();
 
+            // holds the currently selected elements
+            this.selection = new List<Shape>();
+
+            // holds the relationships between selection rectangles and elements in the hierachy
+            this.shapes = new Dictionary<Shape, ComponentBase>();
+
+            // mouse commands
             this.MouseUpCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseUp);
             this.MouseDownCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseDown);
             this.MouseMoveCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseMove);
 
+            // key commands
             this.KeyDownCommand = new RelayCommand<KeyEventArgs>(this.ExecuteKeyDown);
             this.KeyUpCommand = new RelayCommand<KeyEventArgs>(this.ExecuteKeyUp);
 
+            // button commands
             this.GroupSelectionCommand = new RelayCommand(this.ExecuteGroupSelectionCommand);
             this.UnGroupSelectionCommand = new RelayCommand(this.ExecuteUnGroupSelectionCommand);
         }

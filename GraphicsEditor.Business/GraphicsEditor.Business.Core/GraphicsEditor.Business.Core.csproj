@@ -82,6 +82,7 @@
   <ItemGroup>
     <Compile Include="Behaviours\InputBehaviour.cs" />
     <Compile Include="Behaviours\MouseBehaviour.cs" />
+    <Compile Include="Extensions\ShapeExtension.cs" />
     <Compile Include="ServicesLocator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />

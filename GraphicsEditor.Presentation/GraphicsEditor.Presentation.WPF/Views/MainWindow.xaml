@@ -13,10 +13,6 @@
             <RowDefinition />
             <RowDefinition Height="40"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="200" />
-        </Grid.ColumnDefinitions>
         <ItemsControl ItemsSource="{Binding Path=Elements}" Grid.Row="0">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -32,8 +28,5 @@
             <Button Content="Group" Command="{Binding GroupSelectionCommand}" Margin="5" Padding="5"/>
             <Button Content="Ungroup" Command="{Binding UnGroupSelectionCommand}" Margin="5" Padding="5"/>
         </StackPanel>
-        <ListView Grid.Column="1" ItemsSource="{Binding Selection, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}">
-            
-        </ListView>
     </Grid>
 </Window>
