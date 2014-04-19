@@ -12,11 +12,11 @@ public class Composite : ComponentBase
 {
     public Composite()
     {
-        this.Children = new ObservableCollection<IComponent>();
-        this.Children.CollectionChanged += Children_CollectionChanged;
+        this.Components = new ObservableCollection<IComponent>();
+        this.Components.CollectionChanged += ComponentsChanged;
     }
 
-    public ObservableCollection<IComponent> Children
+    public ObservableCollection<IComponent> Components
     {
         get;
         private set;
@@ -24,24 +24,24 @@ public class Composite : ComponentBase
 
     public override void Add(IComponent component)
     {
-        Children.Add(component);
+        Components.Add(component);
         (component as ComponentBase).HideSelectionArea();
     }
 
     public override void Remove(IComponent component)
     {
-        Children.Remove(component);
+        Components.Remove(component);
     }
 
     public override void Move(Vector translation)
     {
         // maybe use parallels here
-        foreach(var child in Children)
+        foreach(var child in Components)
         {
             child.Move(translation);
         }
 
-        this.Children_CollectionChanged(null, null);
+        this.ComponentsChanged(null, null);
     }
 
     // resizing is difficult, because some objects need to be moved as well
@@ -53,7 +53,7 @@ public class Composite : ComponentBase
         Vector scale = new Vector(scaleX, scaleY);
         Point selectionOrigin = new Point(this.SelectionArea.Margin.Left, this.SelectionArea.Margin.Top);
 
-        foreach(var child in this.Children)
+        foreach(var child in this.Components)
         {
             var component = child as ComponentBase;
 
@@ -67,12 +67,12 @@ public class Composite : ComponentBase
             child.Resize(resizeVector);
         }
 
-        this.Children_CollectionChanged(null, null);
+        this.ComponentsChanged(null, null);
     }
 
-    void Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+    void ComponentsChanged(object sender, NotifyCollectionChangedEventArgs e)
     {
-        if (this.Children.Count == 0)
+        if (this.Components.Count == 0)
         {
             this.HideSelectionArea();
             return;
@@ -84,7 +84,7 @@ public class Composite : ComponentBase
         minX = minY = double.MaxValue;
         maxX = maxY = double.MinValue;
 
-        foreach (var child in this.Children)
+        foreach (var child in this.Components)
         {
             var component = child as ComponentBase;
 
@@ -103,7 +103,7 @@ public class Composite : ComponentBase
         var bottomRightX = this.SelectionArea.Margin.Left + this.SelectionArea.Width;
         var bottomRightY = this.SelectionArea.Margin.Top + this.SelectionArea.Height;
 
-        this.ResizeRectangle.Margin = new Thickness(bottomRightX - 10, bottomRightY - 10, 0, 0);
+        this.ResizeArea.Margin = new Thickness(bottomRightX - 10, bottomRightY - 10, 0, 0);
     }
 }
 

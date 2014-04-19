@@ -26,7 +26,6 @@ namespace GraphicsEditor.Business.Core.ViewModels
         private Dictionary<Shape, ComponentBase> shapeComponentRelationships;
 
         private Composite selection;
-  
         private ComponentBase resizingElement;
         private ComponentBase drawingElement;
 
@@ -46,12 +45,10 @@ namespace GraphicsEditor.Business.Core.ViewModels
             // holds all elements displayed in the canvas
             this.CanvasElements = new ObservableCollection<UIElement>();
 
-            // holds the currently selected elements
-            //this.selectedAreas = new List<Shape>();
-
-            // holds the relationships between selection rectangles and elements in the hierachy
+            // holds the relationship between the clickable selection of an element and the element in the hierachy
             this.shapeComponentRelationships = new Dictionary<Shape, ComponentBase>();
 
+            // all selected elements inside a composition
             this.selection = new Composite();
 
             // mouse commands
@@ -67,8 +64,9 @@ namespace GraphicsEditor.Business.Core.ViewModels
             this.GroupSelectionCommand = new RelayCommand(this.ExecuteGroupSelectionCommand);
             this.UnGroupSelectionCommand = new RelayCommand(this.ExecuteUnGroupSelectionCommand);
 
+            // add visual selection area and resize rectangle to canvas
             this.CanvasElements.Add(selection.SelectionArea);
-            this.CanvasElements.Add(selection.ResizeRectangle);
+            this.CanvasElements.Add(selection.ResizeArea);
         }
 
         #region Commands
@@ -131,7 +129,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
             if (!this.hoverOverAnyElement)
             {
-                this.clearSelection();
+                this.selection.Components.Clear();
             }
         }
 
@@ -142,13 +140,14 @@ namespace GraphicsEditor.Business.Core.ViewModels
             trackedMousePosition = e.GetPosition(null);
 
             // we are not interested in mouse move events if the mouse is not pressed
-            // we just want the current mouse position if we are dragging something (this.selection.Children.Count > 0) so lets exit here
-            if (!this.isMouseDown || this.selection.Children.Count > 0)
+            // if we are dragging something (this.selection.Children.Count > 0) exit here (we just needed the updated mouse position)
+            if (!this.isMouseDown || this.selection.Components.Count > 0)
             {
                 return;
             }
 
-            if (this.drawingElement == null && this.resizingElement == null)
+            // draw a new shape
+            if (this.drawingElement == null && this.resizingElement == null && this.isMouseDown)
             {
                 var shape = new Ellipse
                 {
@@ -162,32 +161,34 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
                 var leaf = new Leaf(shape);
 
-                // register events on the selectionArea
+                // register events on the selectionArea (for dragging, selecting)
                 leaf.SelectionArea.MouseDown += this.ElementMouseDown;
                 leaf.SelectionArea.MouseUp += this.ElementMouseUp;
                 leaf.SelectionArea.MouseMove += this.ElementMove;
                 leaf.SelectionArea.MouseEnter += this.ElementMouseEnter;
                 leaf.SelectionArea.MouseLeave += this.ElementMouseLeave;
 
-                leaf.ResizeRectangle.MouseDown += this.ElementEnableResizing;
-                leaf.ResizeRectangle.MouseUp += this.ElementDisableResizing;
-                leaf.ResizeRectangle.MouseEnter += this.ElementMouseEnter;
-                leaf.ResizeRectangle.MouseLeave += this.ElementMouseLeave;
+                // register events for resizing
+                leaf.ResizeArea.MouseDown += this.ElementEnableResizing;
+                leaf.ResizeArea.MouseUp += this.ElementDisableResizing;
+                leaf.ResizeArea.MouseEnter += this.ElementMouseEnter;
+                leaf.ResizeArea.MouseLeave += this.ElementMouseLeave;
 
                 // register the relationship between the selectionArea of the shape and the element in the hierachy
                 this.shapeComponentRelationships.Add(leaf.SelectionArea, leaf);
-                this.shapeComponentRelationships.Add(leaf.ResizeRectangle, leaf);
+                this.shapeComponentRelationships.Add(leaf.ResizeArea, leaf);
 
                 // add all 3 elements to the canvas
                 this.CanvasElements.Add(shape);
                 this.CanvasElements.Add(leaf.SelectionArea);
-                this.CanvasElements.Add(leaf.ResizeRectangle);
+                this.CanvasElements.Add(leaf.ResizeArea);
 
-                this.drawingElement = leaf;
-                this.resizingElement = leaf;
+                // register the created shape for resizing
+                this.resizingElement = this.drawingElement = leaf;
             }
 
-            if (this.resizingElement != null)
+            // resize the clicked shape (this.resizingElement gets set onClick on a resize area)
+            if (this.resizingElement != null && this.isMouseDown)
             {
                 Point topLeft = new Point(this.resizingElement.SelectionArea.Margin.Left, this.resizingElement.SelectionArea.Margin.Top);
 
@@ -202,7 +203,6 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
                 Vector translation = Vector.Subtract(topLeftToMouse, topLeftToBottomRight);
 
-                // get the current absolute position of the bottom right corner of the selectionArea
                 this.resizingElement.Resize(translation);
             }
         }
@@ -260,7 +260,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
             ComponentBase leaf;
             shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
 
-            if (this.selection.Children.Contains(leaf))
+            if (this.selection.Components.Contains(leaf))
             {
                 // CtrlDown -> modifying selection
                 if (isCtrlDown)
@@ -282,7 +282,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
             // if ctrl is not pressed when releasing the mouse button, discard the current selection
             if (!this.isCtrlDown)
             {
-                this.clearSelection();
+                this.selection.Components.Clear();
             }
         }
 
@@ -309,6 +309,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
             ComponentBase leaf;
             shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
 
+            // hide the visual highlighting
             leaf.HideSelectionArea();
         }
 
@@ -320,11 +321,12 @@ namespace GraphicsEditor.Business.Core.ViewModels
             ComponentBase leaf;
             shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
 
-            if (this.selection.Children.Contains(leaf))
+            if (this.selection.Components.Contains(leaf))
             {
                 return;
             }
 
+            // visually highlight the element we are hovering
             leaf.DisplaySelectionArea();
         }
 
@@ -334,21 +336,21 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
         private void ExecuteGroupSelectionCommand()
         {
-            if (this.selection.Children.Count == 1)
+            if (this.selection.Components.Count == 1)
             {
                 System.Diagnostics.Debug.WriteLine("Cannot group 1 item.");
-                //return;
+                return;
             }
 
             Composite composition = new Composite();
 
-            foreach (ComponentBase leaf in this.selection.Children)
+            foreach (ComponentBase leaf in this.selection.Components)
             {
                 this.shapeComponentRelationships.Remove(leaf.SelectionArea);
-                this.shapeComponentRelationships.Remove(leaf.ResizeRectangle);
+                this.shapeComponentRelationships.Remove(leaf.ResizeArea);
 
                 this.CanvasElements.Remove(leaf.SelectionArea);
-                this.CanvasElements.Remove(leaf.ResizeRectangle);
+                this.CanvasElements.Remove(leaf.ResizeArea);
 
                 composition.Add(leaf);
             }
@@ -359,18 +361,18 @@ namespace GraphicsEditor.Business.Core.ViewModels
             composition.SelectionArea.MouseEnter += this.ElementMouseEnter;
             composition.SelectionArea.MouseLeave += this.ElementMouseLeave;
 
-            composition.ResizeRectangle.MouseDown += this.ElementEnableResizing;
-            composition.ResizeRectangle.MouseUp += this.ElementDisableResizing;
-            composition.ResizeRectangle.MouseEnter += this.ElementMouseEnter;
-            composition.ResizeRectangle.MouseLeave += this.ElementMouseLeave;
+            composition.ResizeArea.MouseDown += this.ElementEnableResizing;
+            composition.ResizeArea.MouseUp += this.ElementDisableResizing;
+            composition.ResizeArea.MouseEnter += this.ElementMouseEnter;
+            composition.ResizeArea.MouseLeave += this.ElementMouseLeave;
 
             this.shapeComponentRelationships.Add(composition.SelectionArea, composition);
-            this.shapeComponentRelationships.Add(composition.ResizeRectangle, composition);
+            this.shapeComponentRelationships.Add(composition.ResizeArea, composition);
 
             this.CanvasElements.Add(composition.SelectionArea);
-            this.CanvasElements.Add(composition.ResizeRectangle);
+            this.CanvasElements.Add(composition.ResizeArea);
 
-            this.clearSelection();
+            this.selection.Components.Clear();
 
             this.selection.Add(composition);
         }
@@ -379,39 +381,34 @@ namespace GraphicsEditor.Business.Core.ViewModels
         {
             List<ComponentBase> selectAfterUngroup = new List<ComponentBase>();
 
-            foreach (ComponentBase component in this.selection.Children)
+            foreach (ComponentBase component in this.selection.Components)
             {
                 if (component is Composite)
+                {
+                    foreach (ComponentBase leaf in (component as Composite).Components)
                     {
-                        foreach (ComponentBase leaf in (component as Composite).Children)
-                        {
-                            this.shapeComponentRelationships.Add(leaf.SelectionArea, leaf);
-                            this.shapeComponentRelationships.Add(leaf.ResizeRectangle, leaf);
+                        this.shapeComponentRelationships.Add(leaf.SelectionArea, leaf);
+                        this.shapeComponentRelationships.Add(leaf.ResizeArea, leaf);
 
-                            this.CanvasElements.Add(leaf.SelectionArea);
-                            this.CanvasElements.Add(leaf.ResizeRectangle);
+                        this.CanvasElements.Add(leaf.SelectionArea);
+                        this.CanvasElements.Add(leaf.ResizeArea);
 
-                            selectAfterUngroup.Add(leaf);
-                        }
-
-                        this.shapeComponentRelationships.Remove(component.SelectionArea);
-                        this.shapeComponentRelationships.Remove(component.ResizeRectangle);
-
-                        this.CanvasElements.Remove(component.SelectionArea);
-                        this.CanvasElements.Remove(component.ResizeRectangle);
+                        selectAfterUngroup.Add(leaf);
                     }
+
+                    this.shapeComponentRelationships.Remove(component.SelectionArea);
+                    this.shapeComponentRelationships.Remove(component.ResizeArea);
+
+                    this.CanvasElements.Remove(component.SelectionArea);
+                    this.CanvasElements.Remove(component.ResizeArea);
+                }
             }
 
-            this.clearSelection();
+            this.selection.Components.Clear();
 
-            selectAfterUngroup.ForEach(E => this.selection.Children.Add(E));
+            selectAfterUngroup.ForEach(E => this.selection.Components.Add(E));
         }
 
         #endregion
-
-        private void clearSelection()
-        {
-            this.selection.Children.Clear();
-        }
     }
 }

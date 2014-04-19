@@ -67,7 +67,7 @@ public class Leaf : ComponentBase
         var bottomRightX = this.SelectionArea.Margin.Left + this.SelectionArea.Width;
         var bottomRightY = this.SelectionArea.Margin.Top + this.SelectionArea.Height;
 
-        this.ResizeRectangle.Margin = new Thickness(bottomRightX - 10, bottomRightY - 10, 0, 0);
+        this.ResizeArea.Margin = new Thickness(bottomRightX - 10, bottomRightY - 10, 0, 0);
     }
 }
 

@@ -14,24 +14,27 @@ namespace GraphicsEditor.Business.Domain.Models
         public ComponentBase()
         {
             this.SelectionArea = new Rectangle();
-            this.ResizeRectangle = new Rectangle();
+            this.ResizeArea = new Rectangle();
 
+            this.SelectionArea.Stroke = Brushes.Transparent;
             this.SelectionArea.Fill = Brushes.Transparent;
             this.SelectionArea.StrokeDashArray = new DoubleCollection() { 5, 5 };
 
-            this.ResizeRectangle.Width = 20;
-            this.ResizeRectangle.Height = 20;
-            this.ResizeRectangle.Fill = Brushes.Transparent;
-            this.ResizeRectangle.StrokeThickness = 1;
+            this.ResizeArea.Width = 20;
+            this.ResizeArea.Height = 20;
+            this.ResizeArea.Stroke = Brushes.Transparent;
+            this.ResizeArea.Fill = Brushes.Transparent;
         }
 
+        // represents the clickable rectangle around a component for selection
         public Shape SelectionArea
         {
             get;
             protected set;
         }
 
-        public Shape ResizeRectangle
+        // represents the clickable resize corner of a component in the bottom right of the selection area
+        public Shape ResizeArea
         {
             get;
             protected set;
@@ -40,13 +43,13 @@ namespace GraphicsEditor.Business.Domain.Models
         public void DisplaySelectionArea()
         {
             this.SelectionArea.Stroke = Brushes.Black;
-            this.ResizeRectangle.Stroke = Brushes.Black;
+            this.ResizeArea.Stroke = Brushes.Black;
         }
 
         public void HideSelectionArea()
         {
             this.SelectionArea.Stroke = Brushes.Transparent;
-            this.ResizeRectangle.Stroke = Brushes.Transparent;
+            this.ResizeArea.Stroke = Brushes.Transparent;
         }
 
         public abstract void Add(IComponent Component);
