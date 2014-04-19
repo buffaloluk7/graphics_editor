@@ -1,16 +1,16 @@
 ﻿using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
+using GraphicsEditor.Business.Core.Extensions;
+using GraphicsEditor.Business.Domain.Models;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using GraphicsEditor.Business.Domain.Models;
-using GraphicsEditor.Business.Core.Extensions;
 
 namespace GraphicsEditor.Business.Core.ViewModels
 {
@@ -143,7 +143,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
             }
 
             if (this.currentShape == null)
-            {               
+            {
                 var shape = new Ellipse
                 {
                     Stroke = Brushes.Black,
@@ -175,31 +175,28 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
                 this.currentShape = leaf.SelectionArea;
             }
-
-            if (currentShape != null)
+            else
             {
-                // find component for selection
                 ComponentBase component;
                 this.shapeComponentRelationships.TryGetValue(currentShape, out component);
 
-                Point topRight = new Point(currentShape.Margin.Left, currentShape.Margin.Top);
+                Point topLeft = new Point(currentShape.Margin.Left, currentShape.Margin.Top);
 
-                Vector toBottomRight = new Vector(currentShape.Width, currentShape.Height);
-                Vector topRightToMouse = Point.Subtract(trackedMousePosition, topRight);
+                Vector topLeftToBottomRight = new Vector(currentShape.Width, currentShape.Height);
+                Vector topLeftToMouse = Point.Subtract(trackedMousePosition, topLeft);
 
-                // force aspect ratio if shift is down
+                // force 1:1 aspect ratio
                 if (this.isShiftDown)
                 {
-                    topRightToMouse.Y = topRightToMouse.X;
+                    topLeftToMouse.Y = topLeftToMouse.X;
                 }
 
-                Vector translation = Vector.Subtract(topRightToMouse, toBottomRight);
+                Vector translation = Vector.Subtract(topLeftToMouse, topLeftToBottomRight);
 
                 // get the current absolute position of the bottom right corner of the selectionArea
                 component.Resize(translation);
             }
         }
-
 
         #endregion
 
@@ -231,7 +228,6 @@ namespace GraphicsEditor.Business.Core.ViewModels
             }
         }
         #endregion
-
         
         #region ElementMouseEvents
 
@@ -324,9 +320,19 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
                 if (success)
                 {
+                    if (leaf is Composite && this.selectedAreas.Count == 1)
+                    {
+                        System.Diagnostics.Debug.WriteLine("The only element selected is already a composition.");
+                        return;
+                    }
+
                     composition.Add(leaf);
                     this.shapeComponentRelationships.Remove(selectionArea);
                     this.CanvasElements.Remove(leaf.SelectionArea);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Failed to find leaf for selection area.");
                 }
             }
 
@@ -338,14 +344,21 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
             this.shapeComponentRelationships.Add(composition.SelectionArea, composition);
             this.CanvasElements.Add(composition.SelectionArea);
+
+            this.clearSelection();
+
+            this.selectedAreas.Add(composition.SelectionArea);
+            composition.SelectionArea.DisplaySelectionArea();
         }
 
         private void ExecuteUnGroupSelectionCommand()
         {
-            foreach(Shape shape in selectedAreas)
+            List<Shape> selectAfterUngroup = new List<Shape>();
+
+            foreach(Shape selectionArea in selectedAreas)
             {
                 ComponentBase composition;
-                var success = this.shapeComponentRelationships.TryGetValue(shape, out composition);
+                var success = this.shapeComponentRelationships.TryGetValue(selectionArea, out composition);
 
                 if (success)
                 {
@@ -355,13 +368,19 @@ namespace GraphicsEditor.Business.Core.ViewModels
                         {
                             this.shapeComponentRelationships.Add(component.SelectionArea, component);
                             this.CanvasElements.Add(component.SelectionArea);
+
+                            selectAfterUngroup.Add(component.SelectionArea);
+                            component.SelectionArea.DisplaySelectionArea();
                         }
 
-                        this.shapeComponentRelationships.Remove(composition.SelectionArea);
-                        this.CanvasElements.Remove(composition.SelectionArea);
+                        this.shapeComponentRelationships.Remove(selectionArea);
+                        this.CanvasElements.Remove(selectionArea);
                     }
                 }
             }
+
+            this.clearSelection();
+            this.selectedAreas.AddRange(selectAfterUngroup);
         }
 
         #endregion

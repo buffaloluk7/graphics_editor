@@ -1,5 +1,6 @@
 ﻿using GraphicsEditor.Business.Domain.Models;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
@@ -53,39 +54,33 @@ public class Composite : ComponentBase
 
     private void calculateSelectionArea()
     {
-        var left = double.MaxValue;
-        var top = double.MaxValue;
-        var width = double.MinValue;
-        var height = double.MinValue;
+        // TODO: this is inefficient
+
+        List<Point> points = new List<Point>();
 
         foreach(var child in Children)
         {
             var component = child as ComponentBase;
 
-            if (component.SelectionArea.Margin.Left < left)
-            {
-                left = component.SelectionArea.Margin.Left;
-            }
+            var childLeft = component.SelectionArea.Margin.Left;
+            var childTop = component.SelectionArea.Margin.Top;
+            var childWidth = component.SelectionArea.Width;
+            var childHeight = component.SelectionArea.Height;
 
-            if (component.SelectionArea.Margin.Top < top)
-            {
-                top = component.SelectionArea.Margin.Top;
-            }
-
-            if (component.SelectionArea.Margin.Left + component.SelectionArea.Width > left + width)
-            {
-                width = component.SelectionArea.Margin.Left + component.SelectionArea.Width - left;
-            }
-
-            if (component.SelectionArea.Margin.Top + component.SelectionArea.Height > top + height)
-            {
-                height = component.SelectionArea.Margin.Top + component.SelectionArea.Height - top;
-            }
+            points.Add(new Point(childLeft, childTop));
+            points.Add(new Point(childLeft + childWidth, childTop));
+            points.Add(new Point(childLeft, childTop + childHeight));
+            points.Add(new Point(childLeft + childWidth, childTop + childHeight));
         }
 
-        this.SelectionArea.Width = width;
-        this.SelectionArea.Height = height;
-        this.SelectionArea.Margin = new Thickness(left, top, 0, 0);
+        var minX = points.Min(p => p.X);
+        var minY = points.Min(p => p.Y);
+        var maxX = points.Max(p => p.X);
+        var maxY = points.Max(p => p.Y);
+
+        this.SelectionArea.Width = maxX - minX;
+        this.SelectionArea.Height = maxY - minY;
+        this.SelectionArea.Margin = new Thickness(minX, minY, 0, 0);
     }
 }
 
