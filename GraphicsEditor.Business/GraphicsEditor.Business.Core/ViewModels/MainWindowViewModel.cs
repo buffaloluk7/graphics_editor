@@ -68,7 +68,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
             this.UnGroupSelectionCommand = new RelayCommand(this.ExecuteUnGroupSelectionCommand);
 
             this.CanvasElements.Add(selection.SelectionArea);
-            selection.DisplaySelectionArea();
+            this.CanvasElements.Add(selection.ResizeRectangle);
         }
 
         #region Commands
@@ -168,7 +168,6 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 leaf.SelectionArea.MouseMove += this.ElementMove;
                 leaf.SelectionArea.MouseEnter += this.ElementMouseEnter;
                 leaf.SelectionArea.MouseLeave += this.ElementMouseLeave;
-
 
                 leaf.ResizeRectangle.MouseDown += this.ElementEnableResizing;
                 leaf.ResizeRectangle.MouseUp += this.ElementDisableResizing;
@@ -338,7 +337,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
             if (this.selection.Children.Count == 1)
             {
                 System.Diagnostics.Debug.WriteLine("Cannot group 1 item.");
-                return;
+                //return;
             }
 
             Composite composition = new Composite();
@@ -346,7 +345,10 @@ namespace GraphicsEditor.Business.Core.ViewModels
             foreach (ComponentBase leaf in this.selection.Children)
             {
                 this.shapeComponentRelationships.Remove(leaf.SelectionArea);
+                this.shapeComponentRelationships.Remove(leaf.ResizeRectangle);
+
                 this.CanvasElements.Remove(leaf.SelectionArea);
+                this.CanvasElements.Remove(leaf.ResizeRectangle);
 
                 composition.Add(leaf);
             }
@@ -357,8 +359,16 @@ namespace GraphicsEditor.Business.Core.ViewModels
             composition.SelectionArea.MouseEnter += this.ElementMouseEnter;
             composition.SelectionArea.MouseLeave += this.ElementMouseLeave;
 
+            composition.ResizeRectangle.MouseDown += this.ElementEnableResizing;
+            composition.ResizeRectangle.MouseUp += this.ElementDisableResizing;
+            composition.ResizeRectangle.MouseEnter += this.ElementMouseEnter;
+            composition.ResizeRectangle.MouseLeave += this.ElementMouseLeave;
+
             this.shapeComponentRelationships.Add(composition.SelectionArea, composition);
+            this.shapeComponentRelationships.Add(composition.ResizeRectangle, composition);
+
             this.CanvasElements.Add(composition.SelectionArea);
+            this.CanvasElements.Add(composition.ResizeRectangle);
 
             this.clearSelection();
 
@@ -376,13 +386,19 @@ namespace GraphicsEditor.Business.Core.ViewModels
                         foreach (ComponentBase leaf in (component as Composite).Children)
                         {
                             this.shapeComponentRelationships.Add(leaf.SelectionArea, leaf);
+                            this.shapeComponentRelationships.Add(leaf.ResizeRectangle, leaf);
+
                             this.CanvasElements.Add(leaf.SelectionArea);
+                            this.CanvasElements.Add(leaf.ResizeRectangle);
 
                             selectAfterUngroup.Add(leaf);
                         }
 
                         this.shapeComponentRelationships.Remove(component.SelectionArea);
+                        this.shapeComponentRelationships.Remove(component.ResizeRectangle);
+
                         this.CanvasElements.Remove(component.SelectionArea);
+                        this.CanvasElements.Remove(component.ResizeRectangle);
                     }
             }
 

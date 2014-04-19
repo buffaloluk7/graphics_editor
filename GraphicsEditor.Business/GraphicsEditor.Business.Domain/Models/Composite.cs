@@ -47,7 +47,27 @@ public class Composite : ComponentBase
     // resizing is difficult, because some objects need to be moved as well
     public override void Resize(Vector translation)
     {
-        throw new NotImplementedException();
+        double scaleX = (this.SelectionArea.Width + translation.X) / this.SelectionArea.Width;
+        double scaleY = (this.SelectionArea.Height + translation.Y) / this.SelectionArea.Height;
+
+        Vector scale = new Vector(scaleX, scaleY);
+        Point selectionOrigin = new Point(this.SelectionArea.Margin.Left, this.SelectionArea.Margin.Top);
+
+        foreach(var child in this.Children)
+        {
+            var component = child as ComponentBase;
+
+            Point oldPoint = new Point(component.SelectionArea.Margin.Left, component.SelectionArea.Margin.Top);
+            Point newPoint = new Point(oldPoint.X * scale.X - selectionOrigin.X * scale.X + selectionOrigin.X, oldPoint.Y * scale.Y - selectionOrigin.Y * scale.Y + selectionOrigin.Y);
+
+            Vector moveVector = Point.Subtract(newPoint, oldPoint);
+            Vector resizeVector = new Vector((scale.X - 1) * component.SelectionArea.Width, (scale.Y - 1) * component.SelectionArea.Height);
+
+            child.Move(moveVector);
+            child.Resize(resizeVector);
+        }
+
+        this.Children_CollectionChanged(null, null);
     }
 
     void Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)

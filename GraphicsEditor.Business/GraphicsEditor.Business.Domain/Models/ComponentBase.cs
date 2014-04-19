@@ -22,7 +22,7 @@ namespace GraphicsEditor.Business.Domain.Models
             this.ResizeRectangle.Width = 20;
             this.ResizeRectangle.Height = 20;
             this.ResizeRectangle.Fill = Brushes.Transparent;
-            this.ResizeRectangle.StrokeThickness = 2;
+            this.ResizeRectangle.StrokeThickness = 1;
         }
 
         public Shape SelectionArea
