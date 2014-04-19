@@ -20,15 +20,15 @@ namespace GraphicsEditor.Business.Core.ViewModels
         private bool isMouseDown = false;
         private bool isCtrlDown = false;
         private bool isShiftDown = false;
+
         private bool hoverOverAnyElement = false;
 
         private Dictionary<Shape, ComponentBase> shapeComponentRelationships;
 
         private Composite selection;
-
-        //private List<Shape> selectedAreas;
-
-        private ComponentBase currentShape;
+  
+        private ComponentBase resizingElement;
+        private ComponentBase drawingElement;
 
         private Point clickedMousePosition;
         private Point trackedMousePosition;
@@ -122,7 +122,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
         private void ExecuteMouseUp(MouseEventArgs e)
         {
             this.isMouseDown = false;
-            this.currentShape = null;
+            this.drawingElement = null;
         }
 
         private void ExecuteMouseDown(MouseEventArgs e)
@@ -148,7 +148,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 return;
             }
 
-            if (this.currentShape == null)
+            if (this.drawingElement == null && this.resizingElement == null)
             {
                 var shape = new Ellipse
                 {
@@ -169,27 +169,30 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 leaf.SelectionArea.MouseEnter += this.ElementMouseEnter;
                 leaf.SelectionArea.MouseLeave += this.ElementMouseLeave;
 
-                // this does not work
-                /*
+
+                leaf.ResizeRectangle.MouseDown += this.ElementEnableResizing;
+                leaf.ResizeRectangle.MouseUp += this.ElementDisableResizing;
                 leaf.ResizeRectangle.MouseEnter += this.ElementMouseEnter;
                 leaf.ResizeRectangle.MouseLeave += this.ElementMouseLeave;
-                 */
 
                 // register the relationship between the selectionArea of the shape and the element in the hierachy
                 this.shapeComponentRelationships.Add(leaf.SelectionArea, leaf);
+                this.shapeComponentRelationships.Add(leaf.ResizeRectangle, leaf);
 
                 // add all 3 elements to the canvas
                 this.CanvasElements.Add(shape);
                 this.CanvasElements.Add(leaf.SelectionArea);
                 this.CanvasElements.Add(leaf.ResizeRectangle);
 
-                this.currentShape = leaf;
+                this.drawingElement = leaf;
+                this.resizingElement = leaf;
             }
-            else
-            {
-                Point topLeft = new Point(currentShape.SelectionArea.Margin.Left, currentShape.SelectionArea.Margin.Top);
 
-                Vector topLeftToBottomRight = new Vector(currentShape.SelectionArea.Width, currentShape.SelectionArea.Height);
+            if (this.resizingElement != null)
+            {
+                Point topLeft = new Point(this.resizingElement.SelectionArea.Margin.Left, this.resizingElement.SelectionArea.Margin.Top);
+
+                Vector topLeftToBottomRight = new Vector(this.resizingElement.SelectionArea.Width, this.resizingElement.SelectionArea.Height);
                 Vector topLeftToMouse = Point.Subtract(trackedMousePosition, topLeft);
 
                 // force 1:1 aspect ratio
@@ -201,8 +204,19 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 Vector translation = Vector.Subtract(topLeftToMouse, topLeftToBottomRight);
 
                 // get the current absolute position of the bottom right corner of the selectionArea
-                currentShape.Resize(translation);
+                this.resizingElement.Resize(translation);
             }
+        }
+
+        private void ElementDisableResizing(object sender, MouseButtonEventArgs e)
+        {
+            this.resizingElement = null;
+        }
+
+        private void ElementEnableResizing(object sender, MouseButtonEventArgs e)
+        {
+            var shape = sender as Shape;
+            this.shapeComponentRelationships.TryGetValue(shape, out this.resizingElement);
         }
 
         #endregion
