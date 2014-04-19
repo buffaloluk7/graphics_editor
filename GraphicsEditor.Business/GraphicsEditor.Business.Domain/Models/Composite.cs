@@ -54,33 +54,23 @@ public class Composite : ComponentBase
 
     private void calculateSelectionArea()
     {
-        // TODO: this is inefficient
-
-        List<Point> points = new List<Point>();
+        double minX, minY, maxX, maxY;
+        minX = minY = double.MaxValue;
+        maxX = maxY = double.MinValue;
 
         foreach(var child in Children)
         {
             var component = child as ComponentBase;
 
-            var childLeft = component.SelectionArea.Margin.Left;
-            var childTop = component.SelectionArea.Margin.Top;
-            var childWidth = component.SelectionArea.Width;
-            var childHeight = component.SelectionArea.Height;
-
-            points.Add(new Point(childLeft, childTop));
-            points.Add(new Point(childLeft + childWidth, childTop));
-            points.Add(new Point(childLeft, childTop + childHeight));
-            points.Add(new Point(childLeft + childWidth, childTop + childHeight));
+            minX = Math.Min(minX, component.SelectionArea.Margin.Left);
+            maxX = Math.Max(maxX, component.SelectionArea.Margin.Left + component.SelectionArea.Width);
+            minY = Math.Min(minY, component.SelectionArea.Margin.Top);
+            maxY = Math.Max(maxY, component.SelectionArea.Margin.Top + component.SelectionArea.Height);
         }
 
-        var minX = points.Min(p => p.X);
-        var minY = points.Min(p => p.Y);
-        var maxX = points.Max(p => p.X);
-        var maxY = points.Max(p => p.Y);
-
+        this.SelectionArea.Margin = new Thickness(minX, minY, 0, 0);
         this.SelectionArea.Width = maxX - minX;
         this.SelectionArea.Height = maxY - minY;
-        this.SelectionArea.Margin = new Thickness(minX, minY, 0, 0);
     }
 }
 
