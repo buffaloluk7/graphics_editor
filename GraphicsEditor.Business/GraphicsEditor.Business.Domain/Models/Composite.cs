@@ -11,11 +11,6 @@ public class Composite : ComponentBase
     public Composite()
     {
         Children = new List<IComponent>();
-
-        this.SelectionArea = new Rectangle();
-
-        SelectionArea.Fill = Brushes.Transparent;
-        SelectionArea.StrokeDashArray = new DoubleCollection() { 5, 5 };
     }
 
     public List<IComponent> Children
@@ -27,13 +22,17 @@ public class Composite : ComponentBase
     public override void Add(IComponent component)
     {
         Children.Add(component);
-        this.calculateSelectionArea();
+
+        this.updateSelectionArea();
+        this.updateResizeRectangle();
     }
 
     public override void Remove(IComponent component)
     {
         Children.Remove(component);
-        this.calculateSelectionArea();
+
+        this.updateSelectionArea();
+        this.updateResizeRectangle();
     }
 
     public override void Move(Vector translation)
@@ -43,7 +42,9 @@ public class Composite : ComponentBase
         {
             child.Move(translation);
         }
-        this.calculateSelectionArea();
+
+        this.updateSelectionArea();
+        this.updateResizeRectangle();
     }
 
     // resizing is difficult, because some objects need to be moved as well
@@ -52,13 +53,13 @@ public class Composite : ComponentBase
         throw new NotImplementedException();
     }
 
-    private void calculateSelectionArea()
+    private void updateSelectionArea()
     {
         double minX, minY, maxX, maxY;
         minX = minY = double.MaxValue;
         maxX = maxY = double.MinValue;
 
-        foreach(var child in Children)
+        foreach (var child in Children)
         {
             var component = child as ComponentBase;
 
@@ -71,6 +72,14 @@ public class Composite : ComponentBase
         this.SelectionArea.Margin = new Thickness(minX, minY, 0, 0);
         this.SelectionArea.Width = maxX - minX;
         this.SelectionArea.Height = maxY - minY;
+    }
+
+    private void updateResizeRectangle()
+    {
+        var bottomRightX = this.SelectionArea.Margin.Left + this.SelectionArea.Width;
+        var bottomRightY = this.SelectionArea.Margin.Top + this.SelectionArea.Height;
+
+        this.ResizeRectangle.Margin = new Thickness(bottomRightX - 10, bottomRightY - 10, 0, 0);
     }
 }
 

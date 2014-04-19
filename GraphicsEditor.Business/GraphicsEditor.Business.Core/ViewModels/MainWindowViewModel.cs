@@ -1,6 +1,5 @@
 ﻿using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
-using GraphicsEditor.Business.Core.Extensions;
 using GraphicsEditor.Business.Domain.Models;
 using System;
 using System.Collections.Generic;
@@ -24,7 +23,6 @@ namespace GraphicsEditor.Business.Core.ViewModels
         private bool hoverOverAnyElement = false;
 
         private Dictionary<Shape, ComponentBase> shapeComponentRelationships;
-
         private List<Shape> selectedAreas;
 
         private Shape currentShape;
@@ -163,8 +161,9 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 leaf.SelectionArea.MouseEnter += this.ElementMouseEnter;
                 leaf.SelectionArea.MouseLeave += this.ElementMouseLeave;
 
-                // make the selectionarea invisible
-                leaf.SelectionArea.Stroke = Brushes.Transparent;
+                // this does not work
+                leaf.ResizeRectangle.MouseEnter += this.ElementMouseEnter;
+                leaf.ResizeRectangle.MouseLeave += this.ElementMouseLeave;
 
                 // register the relationship between the selectionArea of the shape and the element in the hierachy
                 this.shapeComponentRelationships.Add(leaf.SelectionArea, leaf);
@@ -172,6 +171,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 // add both elements to the canvas
                 this.CanvasElements.Add(shape);
                 this.CanvasElements.Add(leaf.SelectionArea);
+                this.CanvasElements.Add(leaf.ResizeRectangle);
 
                 this.currentShape = leaf.SelectionArea;
             }
@@ -236,27 +236,28 @@ namespace GraphicsEditor.Business.Core.ViewModels
         private void ElementMouseDown(object sender, MouseButtonEventArgs e)
         {
             this.clickedMousePosition = e.GetPosition(null);
-            var shape = sender as Shape;
 
-            if (this.selectedAreas.Contains(shape))
+            var selectionArea = sender as Shape;
+
+            if (this.selectedAreas.Contains(selectionArea))
             {
                 return;
             }
 
-            shape.DisplaySelectionArea();
-            this.selectedAreas.Add(shape);
+            this.displaySelectionArea(selectionArea);
+            this.selectedAreas.Add(selectionArea);
         }
 
         private void ElementMouseUp(object sender, MouseButtonEventArgs e)
         {
-            var shape = sender as Shape;
+            var selectionArea = sender as Shape;
 
             if (!this.isCtrlDown)
             {
                 this.clearSelection();
             }
 
-            shape.DisplaySelectionArea();
+            this.displaySelectionArea(selectionArea);
         }
 
         private void ElementMove(object sender, MouseEventArgs e)
@@ -269,10 +270,10 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
             Vector translation = Point.Subtract(this.trackedMousePosition, this.clickedMousePosition);
 
-            foreach (Shape shape in this.selectedAreas)
+            foreach (Shape selectionArea in this.selectedAreas)
             {
                 ComponentBase component;
-                var success = this.shapeComponentRelationships.TryGetValue(shape, out component);
+                var success = this.shapeComponentRelationships.TryGetValue(selectionArea, out component);
 
                 if (success)
                 {
@@ -287,22 +288,25 @@ namespace GraphicsEditor.Business.Core.ViewModels
         private void ElementMouseLeave(object sender, MouseEventArgs e)
         {
             this.hoverOverAnyElement = false;
-            var shape = sender as Shape;
+            var selectionArea = sender as Shape;
 
             // if the shape is selected, do not remove visual selection from shape
-            if (this.selectedAreas.Contains(shape))
+            if (this.selectedAreas.Contains(selectionArea))
             {
                 return;
             }
 
-            shape.HideSelectionArea();
+            this.hideSelectionArea(selectionArea);
         }
 
         // display the selection area on hover
         private void ElementMouseEnter(object sender, MouseEventArgs e)
         {
             this.hoverOverAnyElement = true;
-            (sender as Shape).DisplaySelectionArea();
+
+            var selectionArea = sender as Shape;
+
+            this.displaySelectionArea(selectionArea);
         }
 
         #endregion
@@ -348,7 +352,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
             this.clearSelection();
 
             this.selectedAreas.Add(composition.SelectionArea);
-            composition.SelectionArea.DisplaySelectionArea();
+            composition.DisplaySelectionArea();
         }
 
         private void ExecuteUnGroupSelectionCommand()
@@ -370,7 +374,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
                             this.CanvasElements.Add(component.SelectionArea);
 
                             selectAfterUngroup.Add(component.SelectionArea);
-                            component.SelectionArea.DisplaySelectionArea();
+                            component.DisplaySelectionArea();
                         }
 
                         this.shapeComponentRelationships.Remove(selectionArea);
@@ -385,11 +389,33 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
         #endregion
 
+        private void displaySelectionArea(Shape shape)
+        {
+            ComponentBase component;
+            var success = shapeComponentRelationships.TryGetValue(shape, out component);
+
+            if (success)
+            {
+                component.DisplaySelectionArea();
+            }
+        }
+
+        private void hideSelectionArea(Shape shape)
+        {
+            ComponentBase component;
+            var success = shapeComponentRelationships.TryGetValue(shape, out component);
+
+            if (success)
+            {
+                component.HideSelectionArea();
+            }
+        }
+
         private void clearSelection()
         {
-            foreach (var el in this.selectedAreas)
+            foreach (var selectionArea in this.selectedAreas)
             {
-                el.HideSelectionArea();
+                this.hideSelectionArea(selectionArea);
             }
 
             this.selectedAreas.Clear();

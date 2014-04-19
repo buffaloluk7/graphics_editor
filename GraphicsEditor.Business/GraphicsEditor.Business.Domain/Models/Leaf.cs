@@ -11,13 +11,8 @@ public class Leaf : ComponentBase
     public Leaf(Shape shape)
     {
         this.shape = shape;
-        this.SelectionArea = new Rectangle();
-
-        SelectionArea.Margin = shape.Margin;
-        SelectionArea.Width = shape.Width;
-        SelectionArea.Height = shape.Height;
-        SelectionArea.Fill = Brushes.Transparent;
-        SelectionArea.StrokeDashArray = new DoubleCollection() { 5, 5 };
+        this.updateSelectionArea();
+        this.updateResizeRectangle();
     }
 
     public override void Add(IComponent Component)
@@ -38,7 +33,9 @@ public class Leaf : ComponentBase
         var newMargin = new Thickness(newPosition.X, newPosition.Y, 0, 0);
 
         this.shape.Margin = newMargin;
-        this.SelectionArea.Margin = newMargin;
+
+        this.updateSelectionArea();
+        this.updateResizeRectangle();
     }
 
     public override void Resize(Vector translation)
@@ -53,8 +50,23 @@ public class Leaf : ComponentBase
         this.shape.Width = newBottomRightRel.X;
         this.shape.Height = newBottomRightRel.Y;
 
-        this.SelectionArea.Width = newBottomRightRel.X;
-        this.SelectionArea.Height = newBottomRightRel.Y;
+        this.updateSelectionArea();
+        this.updateResizeRectangle();
+    }
+
+    private void updateSelectionArea()
+    {
+        this.SelectionArea.Margin = this.shape.Margin;
+        this.SelectionArea.Width = this.shape.Width;
+        this.SelectionArea.Height = this.shape.Height;
+    }
+
+    private void updateResizeRectangle()
+    {
+        var bottomRightX = this.SelectionArea.Margin.Left + this.SelectionArea.Width;
+        var bottomRightY = this.SelectionArea.Margin.Top + this.SelectionArea.Height;
+
+        this.ResizeRectangle.Margin = new Thickness(bottomRightX - 10, bottomRightY - 10, 0, 0);
     }
 }
 
