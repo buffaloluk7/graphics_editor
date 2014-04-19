@@ -11,6 +11,7 @@ public class Leaf : ComponentBase
     public Leaf(Shape shape)
     {
         this.shape = shape;
+
         this.updateSelectionArea();
         this.updateResizeRectangle();
     }

@@ -23,9 +23,12 @@ namespace GraphicsEditor.Business.Core.ViewModels
         private bool hoverOverAnyElement = false;
 
         private Dictionary<Shape, ComponentBase> shapeComponentRelationships;
-        private List<Shape> selectedAreas;
 
-        private Shape currentShape;
+        private Composite selection;
+
+        //private List<Shape> selectedAreas;
+
+        private ComponentBase currentShape;
 
         private Point clickedMousePosition;
         private Point trackedMousePosition;
@@ -44,10 +47,12 @@ namespace GraphicsEditor.Business.Core.ViewModels
             this.CanvasElements = new ObservableCollection<UIElement>();
 
             // holds the currently selected elements
-            this.selectedAreas = new List<Shape>();
+            //this.selectedAreas = new List<Shape>();
 
             // holds the relationships between selection rectangles and elements in the hierachy
             this.shapeComponentRelationships = new Dictionary<Shape, ComponentBase>();
+
+            this.selection = new Composite();
 
             // mouse commands
             this.MouseUpCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseUp);
@@ -61,6 +66,9 @@ namespace GraphicsEditor.Business.Core.ViewModels
             // button commands
             this.GroupSelectionCommand = new RelayCommand(this.ExecuteGroupSelectionCommand);
             this.UnGroupSelectionCommand = new RelayCommand(this.ExecuteUnGroupSelectionCommand);
+
+            this.CanvasElements.Add(selection.SelectionArea);
+            selection.DisplaySelectionArea();
         }
 
         #region Commands
@@ -134,8 +142,8 @@ namespace GraphicsEditor.Business.Core.ViewModels
             trackedMousePosition = e.GetPosition(null);
 
             // we are not interested in mouse move events if the mouse is not pressed
-            // we just want the current mouse position if we are dragging something (selection != null) so lets exit here
-            if (!this.isMouseDown || this.selectedAreas.Count > 0)
+            // we just want the current mouse position if we are dragging something (this.selection.Children.Count > 0) so lets exit here
+            if (!this.isMouseDown || this.selection.Children.Count > 0)
             {
                 return;
             }
@@ -162,27 +170,26 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 leaf.SelectionArea.MouseLeave += this.ElementMouseLeave;
 
                 // this does not work
+                /*
                 leaf.ResizeRectangle.MouseEnter += this.ElementMouseEnter;
                 leaf.ResizeRectangle.MouseLeave += this.ElementMouseLeave;
+                 */
 
                 // register the relationship between the selectionArea of the shape and the element in the hierachy
                 this.shapeComponentRelationships.Add(leaf.SelectionArea, leaf);
 
-                // add both elements to the canvas
+                // add all 3 elements to the canvas
                 this.CanvasElements.Add(shape);
                 this.CanvasElements.Add(leaf.SelectionArea);
                 this.CanvasElements.Add(leaf.ResizeRectangle);
 
-                this.currentShape = leaf.SelectionArea;
+                this.currentShape = leaf;
             }
             else
             {
-                ComponentBase component;
-                this.shapeComponentRelationships.TryGetValue(currentShape, out component);
+                Point topLeft = new Point(currentShape.SelectionArea.Margin.Left, currentShape.SelectionArea.Margin.Top);
 
-                Point topLeft = new Point(currentShape.Margin.Left, currentShape.Margin.Top);
-
-                Vector topLeftToBottomRight = new Vector(currentShape.Width, currentShape.Height);
+                Vector topLeftToBottomRight = new Vector(currentShape.SelectionArea.Width, currentShape.SelectionArea.Height);
                 Vector topLeftToMouse = Point.Subtract(trackedMousePosition, topLeft);
 
                 // force 1:1 aspect ratio
@@ -194,7 +201,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
                 Vector translation = Vector.Subtract(topLeftToMouse, topLeftToBottomRight);
 
                 // get the current absolute position of the bottom right corner of the selectionArea
-                component.Resize(translation);
+                currentShape.Resize(translation);
             }
         }
 
@@ -237,27 +244,33 @@ namespace GraphicsEditor.Business.Core.ViewModels
         {
             this.clickedMousePosition = e.GetPosition(null);
 
-            var selectionArea = sender as Shape;
+            ComponentBase leaf;
+            shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
 
-            if (this.selectedAreas.Contains(selectionArea))
+            if (this.selection.Children.Contains(leaf))
             {
-                return;
+                // CtrlDown -> modifying selection
+                if (isCtrlDown)
+                {
+                    this.selection.Remove(leaf);
+                }
             }
-
-            this.displaySelectionArea(selectionArea);
-            this.selectedAreas.Add(selectionArea);
+            else
+            {
+                this.selection.Add(leaf);
+            }
         }
 
         private void ElementMouseUp(object sender, MouseButtonEventArgs e)
         {
-            var selectionArea = sender as Shape;
+            ComponentBase leaf;
+            shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
 
+            // if ctrl is not pressed when releasing the mouse button, discard the current selection
             if (!this.isCtrlDown)
             {
                 this.clearSelection();
             }
-
-            this.displaySelectionArea(selectionArea);
         }
 
         private void ElementMove(object sender, MouseEventArgs e)
@@ -270,16 +283,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
             Vector translation = Point.Subtract(this.trackedMousePosition, this.clickedMousePosition);
 
-            foreach (Shape selectionArea in this.selectedAreas)
-            {
-                ComponentBase component;
-                var success = this.shapeComponentRelationships.TryGetValue(selectionArea, out component);
-
-                if (success)
-                {
-                    component.Move(translation);
-                }
-            }
+            this.selection.Move(translation);
 
             this.clickedMousePosition = this.trackedMousePosition;
         }
@@ -288,15 +292,11 @@ namespace GraphicsEditor.Business.Core.ViewModels
         private void ElementMouseLeave(object sender, MouseEventArgs e)
         {
             this.hoverOverAnyElement = false;
-            var selectionArea = sender as Shape;
 
-            // if the shape is selected, do not remove visual selection from shape
-            if (this.selectedAreas.Contains(selectionArea))
-            {
-                return;
-            }
+            ComponentBase leaf;
+            shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
 
-            this.hideSelectionArea(selectionArea);
+            leaf.HideSelectionArea();
         }
 
         // display the selection area on hover
@@ -304,9 +304,15 @@ namespace GraphicsEditor.Business.Core.ViewModels
         {
             this.hoverOverAnyElement = true;
 
-            var selectionArea = sender as Shape;
+            ComponentBase leaf;
+            shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
 
-            this.displaySelectionArea(selectionArea);
+            if (this.selection.Children.Contains(leaf))
+            {
+                return;
+            }
+
+            leaf.DisplaySelectionArea();
         }
 
         #endregion
@@ -315,29 +321,20 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
         private void ExecuteGroupSelectionCommand()
         {
+            if (this.selection.Children.Count == 1)
+            {
+                System.Diagnostics.Debug.WriteLine("Cannot group 1 item.");
+                return;
+            }
+
             Composite composition = new Composite();
 
-            foreach (Shape selectionArea in this.selectedAreas)
+            foreach (ComponentBase leaf in this.selection.Children)
             {
-                ComponentBase leaf;
-                var success = this.shapeComponentRelationships.TryGetValue(selectionArea, out leaf);
+                this.shapeComponentRelationships.Remove(leaf.SelectionArea);
+                this.CanvasElements.Remove(leaf.SelectionArea);
 
-                if (success)
-                {
-                    if (leaf is Composite && this.selectedAreas.Count == 1)
-                    {
-                        System.Diagnostics.Debug.WriteLine("The only element selected is already a composition.");
-                        return;
-                    }
-
-                    composition.Add(leaf);
-                    this.shapeComponentRelationships.Remove(selectionArea);
-                    this.CanvasElements.Remove(leaf.SelectionArea);
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("Failed to find leaf for selection area.");
-                }
+                composition.Add(leaf);
             }
 
             composition.SelectionArea.MouseDown += this.ElementMouseDown;
@@ -351,74 +348,40 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
             this.clearSelection();
 
-            this.selectedAreas.Add(composition.SelectionArea);
-            composition.DisplaySelectionArea();
+            this.selection.Add(composition);
         }
 
         private void ExecuteUnGroupSelectionCommand()
         {
-            List<Shape> selectAfterUngroup = new List<Shape>();
+            List<ComponentBase> selectAfterUngroup = new List<ComponentBase>();
 
-            foreach(Shape selectionArea in selectedAreas)
+            foreach (ComponentBase component in this.selection.Children)
             {
-                ComponentBase composition;
-                var success = this.shapeComponentRelationships.TryGetValue(selectionArea, out composition);
-
-                if (success)
-                {
-                    if (composition is Composite)
+                if (component is Composite)
                     {
-                        foreach(ComponentBase component in (composition as Composite).Children)
+                        foreach (ComponentBase leaf in (component as Composite).Children)
                         {
-                            this.shapeComponentRelationships.Add(component.SelectionArea, component);
-                            this.CanvasElements.Add(component.SelectionArea);
+                            this.shapeComponentRelationships.Add(leaf.SelectionArea, leaf);
+                            this.CanvasElements.Add(leaf.SelectionArea);
 
-                            selectAfterUngroup.Add(component.SelectionArea);
-                            component.DisplaySelectionArea();
+                            selectAfterUngroup.Add(leaf);
                         }
 
-                        this.shapeComponentRelationships.Remove(selectionArea);
-                        this.CanvasElements.Remove(selectionArea);
+                        this.shapeComponentRelationships.Remove(component.SelectionArea);
+                        this.CanvasElements.Remove(component.SelectionArea);
                     }
-                }
             }
 
             this.clearSelection();
-            this.selectedAreas.AddRange(selectAfterUngroup);
+
+            selectAfterUngroup.ForEach(E => this.selection.Children.Add(E));
         }
 
         #endregion
 
-        private void displaySelectionArea(Shape shape)
-        {
-            ComponentBase component;
-            var success = shapeComponentRelationships.TryGetValue(shape, out component);
-
-            if (success)
-            {
-                component.DisplaySelectionArea();
-            }
-        }
-
-        private void hideSelectionArea(Shape shape)
-        {
-            ComponentBase component;
-            var success = shapeComponentRelationships.TryGetValue(shape, out component);
-
-            if (success)
-            {
-                component.HideSelectionArea();
-            }
-        }
-
         private void clearSelection()
         {
-            foreach (var selectionArea in this.selectedAreas)
-            {
-                this.hideSelectionArea(selectionArea);
-            }
-
-            this.selectedAreas.Clear();
+            this.selection.Children.Clear();
         }
     }
 }
