@@ -80,6 +80,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Behaviours\InputBehaviour.cs" />
     <Compile Include="Behaviours\MouseBehaviour.cs" />
     <Compile Include="ServicesLocator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
