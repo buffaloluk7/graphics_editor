@@ -1,49 +1,58 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Shapes;
 
-public class ShapeBase : IComponent
+namespace GraphicsEditor.Business.Domain.Models
 {
-    protected Shape shape;
-
-    public ShapeBase(Shape shape)
+    public class ShapeBase
     {
-        this.shape = shape;
-    }
-
-    public Shape Shape
-    {
-        get
+        public ShapeBase()
         {
-            return shape;
+
+        }
+
+        public Shape Shape
+        {
+            get;
+            private set;
+        }
+
+        public ShapeBase Clone(Brush color, int strokeThickness, ShapeType type, Point position)
+        {
+            var newShapeBase = new ShapeBase();
+            Shape newShape = null;
+
+            switch(type)
+            {
+                case ShapeType.Ellipse:
+                    newShape = new Ellipse();
+                    break;
+
+                case ShapeType.Rectangle:
+                    newShape = new Rectangle();
+                    break;
+
+                case ShapeType.Triangle:
+                    newShape = new Polygon();
+                    (newShape as Polygon).Points = new PointCollection() { new Point(position.X + 5, position.Y), new Point(position.X, position.Y + 10), new Point(position.X + 10, position.Y + 10) };
+                    break;
+            }
+
+            newShape.Margin = new Thickness(position.X - 10, position.Y - 10, 0, 0);
+            newShape.Width = 10;
+            newShape.Height = 10;
+            newShape.StrokeThickness = strokeThickness;
+            newShape.Stroke = color;
+            newShape.Fill = Brushes.Transparent;
+
+            newShapeBase.Shape = newShape;
+
+            return newShapeBase;
         }
     }
-
-    public void Add(IComponent Component)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void Remove(IComponent Component)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void Move(Vector translation)
-    {
-        Point oldPosition = new Point(this.shape.Margin.Left, this.shape.Margin.Top);
-        Point newPosition = Point.Add(oldPosition, translation);
-
-        this.shape.Margin = new Thickness(newPosition.X, newPosition.Y, 0, 0);
-    }
-
-    public void Resize(Vector translation)
-    {
-        Point oldBottomRightRel = new Point(this.shape.Width, this.shape.Height);
-        Point newBottomRightRel = Point.Add(oldBottomRightRel, translation);
-
-        this.shape.Width = newBottomRightRel.X;
-        this.shape.Height = newBottomRightRel.Y;
-    }
 }
-

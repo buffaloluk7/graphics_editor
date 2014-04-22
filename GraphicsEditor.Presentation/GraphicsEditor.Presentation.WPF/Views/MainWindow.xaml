@@ -2,12 +2,21 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:Behaviours="clr-namespace:GraphicsEditor.Business.Core.Behaviours;assembly=GraphicsEditor.Business.Core"
+        xmlns:System="clr-namespace:System;assembly=mscorlib"
+        xmlns:ShapeTypeEnum="clr-namespace:GraphicsEditor.Business.Domain.Models;assembly=GraphicsEditor.Business.Domain"
         Title="MainWindow"
         Height="800"
         Width="1200"
         DataContext="{Binding MainWindow, Mode=OneWay, Source={StaticResource Locator}}"
         Behaviours:InputBehaviour.KeyDownCommand="{Binding KeyDownCommand}"
         Behaviours:InputBehaviour.KeyUpCommand="{Binding KeyUpCommand}">
+    <Window.Resources>
+        <ObjectDataProvider x:Key="ShapeTypeValues" MethodName="GetValues" ObjectType="{x:Type System:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="ShapeTypeEnum:ShapeType" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition />
@@ -27,6 +36,14 @@
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <Button Content="Group" Command="{Binding GroupSelectionCommand}" Margin="5" Padding="5"/>
             <Button Content="Ungroup" Command="{Binding UnGroupSelectionCommand}" Margin="5" Padding="5"/>
+            <ComboBox ItemsSource="{Binding Source={StaticResource ShapeTypeValues}}" SelectedItem="{Binding Path=SelectedShapeType}"/>
+            <ComboBox SelectedItem="{Binding Path=SelectedStrokeThickness}">
+                <ComboBoxItem Content="1"/>
+                <ComboBoxItem Content="2"/>
+                <ComboBoxItem Content="3"/>
+                <ComboBoxItem Content="4"/>
+                <ComboBoxItem Content="5"/>
+            </ComboBox>
         </StackPanel>
     </Grid>
 </Window>
