@@ -88,6 +88,7 @@ namespace GraphicsEditor.Business.Core.ViewModels
             this.AvailableStrokeThickness = new ObservableCollection<int>();
             this.AvailableColors = new ObservableCollection<string>();
 
+            // fill comboboxes with values
             typeof(Brushes).GetProperties().ToList().ForEach(I => this.AvailableColors.Add(I.Name));
             Enumerable.Range(1, 10).ToList().ForEach(E => this.AvailableStrokeThickness.Add(E));
 
@@ -271,41 +272,10 @@ namespace GraphicsEditor.Business.Core.ViewModels
                    break;
 
                case Key.Delete:
-                   //this.removeComponent(this.selection);
+                   this.removeComponent(this.selection);
+                   this.selection.Components.Clear();
                    break;
            }
-        }
-
-        private void removeComponent(ComponentBase component)
-        {
-            if (component is Leaf)
-            {
-                this.CanvasElements.Remove((component as Leaf).Shape);
-            }
-            else if (component is Composite)
-            {
-                foreach(var child in (component as Composite).Components)
-                {
-                    this.removeComponent(child as ComponentBase);
-                }
-            }
-
-            if (this.selection.Components.Contains(component))
-            {
-                selection.Components.Remove(component);
-            }
-            
-            component.HideSelectionArea();
-
-            // do not remove seletion and resize area of our selection composite
-            if (component != this.selection)
-            {
-                this.CanvasElements.Remove(component.SelectionArea);
-                this.CanvasElements.Remove(component.ResizeArea);
-
-                this.shapeComponentRelationships.Remove(component.SelectionArea);
-                this.shapeComponentRelationships.Remove(component.ResizeArea);
-            }
         }
 
         private void ExecuteKeyUp(KeyEventArgs e)
@@ -322,7 +292,34 @@ namespace GraphicsEditor.Business.Core.ViewModels
             }
         }
         #endregion
-        
+
+        private void removeComponent(ComponentBase component)
+        {
+            if (component is Leaf)
+            {
+                this.CanvasElements.Remove((component as Leaf).Shape);
+            }
+            else if (component is Composite)
+            {
+                foreach (var child in (component as Composite).Components)
+                {
+                    this.removeComponent(child as ComponentBase);
+                }
+            }
+
+            component.HideSelectionArea();
+
+            // do not remove seletion and resize area of our selection composite
+            if (component != this.selection)
+            {
+                this.CanvasElements.Remove(component.SelectionArea);
+                this.CanvasElements.Remove(component.ResizeArea);
+
+                this.shapeComponentRelationships.Remove(component.SelectionArea);
+                this.shapeComponentRelationships.Remove(component.ResizeArea);
+            }
+        }
+
         #region ElementMouseEvents
 
         // these methods are registered on the selection rectangles
@@ -332,7 +329,12 @@ namespace GraphicsEditor.Business.Core.ViewModels
             this.clickedMousePosition = e.GetPosition(null);
 
             ComponentBase leaf;
-            shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
+            var success = shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
+
+            if (!success)
+            {
+                return;
+            }
 
             if (this.selection.Components.Contains(leaf))
             {
@@ -350,9 +352,6 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
         private void ElementMouseUp(object sender, MouseButtonEventArgs e)
         {
-            ComponentBase leaf;
-            shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
-
             // if ctrl is not pressed when releasing the mouse button, discard the current selection
             if (!this.isCtrlDown)
             {
@@ -381,10 +380,13 @@ namespace GraphicsEditor.Business.Core.ViewModels
             this.hoverOverAnyElement = false;
 
             ComponentBase leaf;
-            shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
+            var success = shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
 
-            // hide the visual highlighting
-            leaf.HideSelectionArea();
+            if (success)
+            {
+                // hide the visual highlighting
+                leaf.HideSelectionArea();
+            }
         }
 
         // display the selection area on hover
@@ -393,15 +395,18 @@ namespace GraphicsEditor.Business.Core.ViewModels
             this.hoverOverAnyElement = true;
 
             ComponentBase leaf;
-            shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
+            var success = shapeComponentRelationships.TryGetValue(sender as Shape, out leaf);
 
             if (this.selection.Components.Contains(leaf))
             {
                 return;
             }
 
-            // visually highlight the element we are hovering
-            leaf.DisplaySelectionArea();
+            if (success)
+            {
+                // visually highlight the element we are hovering
+                leaf.DisplaySelectionArea();
+            }
         }
 
         #endregion

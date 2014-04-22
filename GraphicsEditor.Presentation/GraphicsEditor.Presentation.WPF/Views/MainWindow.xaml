@@ -4,9 +4,8 @@
         xmlns:Behaviours="clr-namespace:GraphicsEditor.Business.Core.Behaviours;assembly=GraphicsEditor.Business.Core"
         xmlns:System="clr-namespace:System;assembly=mscorlib"
         xmlns:Enums="clr-namespace:GraphicsEditor.Business.Core.Enums;assembly=GraphicsEditor.Business.Core"
-        Title="MainWindow"
-        Height="800"
-        Width="1200"
+        Title="Graphics Editor"
+        WindowState="Maximized"
         DataContext="{Binding MainWindow, Mode=OneWay, Source={StaticResource Locator}}"
         Behaviours:InputBehaviour.KeyDownCommand="{Binding KeyDownCommand}"
         Behaviours:InputBehaviour.KeyUpCommand="{Binding KeyUpCommand}">
@@ -16,13 +15,25 @@
                 <x:Type TypeName="Enums:ShapeType" />
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+
+        <Style x:Key="DefaultStyle" TargetType="Control">
+            <Setter Property="Padding" Value="5" />
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="DefaultStyleButton" TargetType="Button" BasedOn="{StaticResource DefaultStyle}" />
+        <Style x:Key="DefaultStyleCombobox" TargetType="ComboBox" BasedOn="{StaticResource DefaultStyle}" />
+
     </Window.Resources>
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition />
-            <RowDefinition Height="40"/>
-        </Grid.RowDefinitions>
-        <ItemsControl ItemsSource="{Binding Path=CanvasElements}" Grid.Row="0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="100" />
+        </Grid.ColumnDefinitions>
+        <ItemsControl ItemsSource="{Binding Path=CanvasElements}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <Canvas Background="White"
@@ -33,24 +44,21 @@
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
         </ItemsControl>
-        <StackPanel Grid.Row="1" Orientation="Horizontal">
-            <StackPanel.Resources>
-                <Style TargetType="{x:Type Button}">
-                    <Setter Property="Margin" Value="5" />
-                    <Setter Property="Padding" Value="5" />
-                </Style>
-                <Style TargetType="{x:Type ComboBox}">
-                    <Setter Property="Margin" Value="5" />
-                    <Setter Property="Padding" Value="5" />
-                </Style>
-            </StackPanel.Resources>
-            
-            <Button Content="Group" Command="{Binding GroupSelectionCommand}" />
-            <Button Content="Ungroup" Command="{Binding UnGroupSelectionCommand}" />
-            <ComboBox ItemsSource="{Binding Source={StaticResource ShapeTypeValues}}" SelectedItem="{Binding Path=SelectedShapeType}"/>
-            <ComboBox ItemsSource="{Binding Path=AvailableColors}" SelectedItem="{Binding Path=SelectedShapeColor}"/>
+        <StackPanel Grid.Column="1" Orientation="Vertical">
+            <Button Content="Group" Command="{Binding GroupSelectionCommand}" Style="{StaticResource DefaultStyleButton}"/>
+            <Button Content="Ungroup" Command="{Binding UnGroupSelectionCommand}" Style="{StaticResource DefaultStyleButton}"/>
+            <Separator />
+            <ComboBox ItemsSource="{Binding Source={StaticResource ShapeTypeValues}}" 
+                      SelectedItem="{Binding Path=SelectedShapeType}"
+                      Style="{StaticResource DefaultStyleCombobox}"/>
+            <ComboBox ItemsSource="{Binding Path=AvailableColors}" 
+                      SelectedIndex="7"
+                      SelectedItem="{Binding Path=SelectedShapeColor}"
+                      Style="{StaticResource DefaultStyleCombobox}"/>
             <ComboBox SelectedItem="{Binding Path=SelectedStrokeThickness}"
-                      ItemsSource="{Binding Path=AvailableStrokeThickness}"/>
+                      SelectedIndex="3"
+                      ItemsSource="{Binding Path=AvailableStrokeThickness}"
+                      Style="{StaticResource DefaultStyleCombobox}"/>
         </StackPanel>
     </Grid>
 </Window>
