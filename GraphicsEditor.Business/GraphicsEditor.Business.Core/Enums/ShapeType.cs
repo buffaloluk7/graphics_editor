@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GraphicsEditor.Business.Domain
+namespace GraphicsEditor.Business.Core.Enums
 {
     public enum ShapeType
     {

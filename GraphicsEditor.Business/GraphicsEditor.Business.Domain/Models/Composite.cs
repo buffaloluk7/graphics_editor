@@ -55,13 +55,13 @@ public class Composite : ComponentBase
 
         foreach(var child in this.Components)
         {
-            var component = child as ComponentBase;
+            var component = (child as ComponentBase).SelectionArea;
 
-            Point oldPoint = new Point(component.SelectionArea.Margin.Left, component.SelectionArea.Margin.Top);
+            Point oldPoint = new Point(component.Margin.Left, component.Margin.Top);
             Point newPoint = new Point(oldPoint.X * scale.X - selectionOrigin.X * scale.X + selectionOrigin.X, oldPoint.Y * scale.Y - selectionOrigin.Y * scale.Y + selectionOrigin.Y);
 
             Vector moveVector = Point.Subtract(newPoint, oldPoint);
-            Vector resizeVector = new Vector((scale.X - 1) * component.SelectionArea.Width, (scale.Y - 1) * component.SelectionArea.Height);
+            Vector resizeVector = new Vector(scale.X * component.Width - component.Width, scale.Y * component.Height - component.Height);
 
             child.Move(moveVector);
             child.Resize(resizeVector);
@@ -86,12 +86,12 @@ public class Composite : ComponentBase
 
         foreach (var child in this.Components)
         {
-            var component = child as ComponentBase;
+            var component = (child as ComponentBase).SelectionArea;
 
-            minX = Math.Min(minX, component.SelectionArea.Margin.Left);
-            maxX = Math.Max(maxX, component.SelectionArea.Margin.Left + component.SelectionArea.Width);
-            minY = Math.Min(minY, component.SelectionArea.Margin.Top);
-            maxY = Math.Max(maxY, component.SelectionArea.Margin.Top + component.SelectionArea.Height);
+            minX = Math.Min(minX, component.Margin.Left);
+            maxX = Math.Max(maxX, component.Margin.Left + component.Width);
+            minY = Math.Min(minY, component.Margin.Top);
+            maxY = Math.Max(maxY, component.Margin.Top + component.Height);
         }
 
 

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:Behaviours="clr-namespace:GraphicsEditor.Business.Core.Behaviours;assembly=GraphicsEditor.Business.Core"
         xmlns:System="clr-namespace:System;assembly=mscorlib"
-        xmlns:ShapeTypeEnum="clr-namespace:GraphicsEditor.Business.Domain.Models;assembly=GraphicsEditor.Business.Domain"
+        xmlns:Enums="clr-namespace:GraphicsEditor.Business.Core.Enums;assembly=GraphicsEditor.Business.Core"
         Title="MainWindow"
         Height="800"
         Width="1200"
@@ -13,7 +13,7 @@
     <Window.Resources>
         <ObjectDataProvider x:Key="ShapeTypeValues" MethodName="GetValues" ObjectType="{x:Type System:Enum}">
             <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="ShapeTypeEnum:ShapeType" />
+                <x:Type TypeName="Enums:ShapeType" />
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
     </Window.Resources>
@@ -34,16 +34,23 @@
             </ItemsControl.ItemsPanel>
         </ItemsControl>
         <StackPanel Grid.Row="1" Orientation="Horizontal">
-            <Button Content="Group" Command="{Binding GroupSelectionCommand}" Margin="5" Padding="5"/>
-            <Button Content="Ungroup" Command="{Binding UnGroupSelectionCommand}" Margin="5" Padding="5"/>
+            <StackPanel.Resources>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Margin" Value="5" />
+                    <Setter Property="Padding" Value="5" />
+                </Style>
+                <Style TargetType="{x:Type ComboBox}">
+                    <Setter Property="Margin" Value="5" />
+                    <Setter Property="Padding" Value="5" />
+                </Style>
+            </StackPanel.Resources>
+            
+            <Button Content="Group" Command="{Binding GroupSelectionCommand}" />
+            <Button Content="Ungroup" Command="{Binding UnGroupSelectionCommand}" />
             <ComboBox ItemsSource="{Binding Source={StaticResource ShapeTypeValues}}" SelectedItem="{Binding Path=SelectedShapeType}"/>
-            <ComboBox SelectedItem="{Binding Path=SelectedStrokeThickness}">
-                <ComboBoxItem Content="1"/>
-                <ComboBoxItem Content="2"/>
-                <ComboBoxItem Content="3"/>
-                <ComboBoxItem Content="4"/>
-                <ComboBoxItem Content="5"/>
-            </ComboBox>
+            <ComboBox ItemsSource="{Binding Path=AvailableColors}" SelectedItem="{Binding Path=SelectedShapeColor}"/>
+            <ComboBox SelectedItem="{Binding Path=SelectedStrokeThickness}"
+                      ItemsSource="{Binding Path=AvailableStrokeThickness}"/>
         </StackPanel>
     </Grid>
 </Window>

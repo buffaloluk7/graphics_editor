@@ -1,5 +1,6 @@
 ﻿using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
+using GraphicsEditor.Business.Core.Enums;
 using GraphicsEditor.Business.Domain;
 using GraphicsEditor.Business.Domain.Models;
 using System;
@@ -43,13 +44,30 @@ namespace GraphicsEditor.Business.Core.ViewModels
             set;
         }
 
+        public ObservableCollection<int> AvailableStrokeThickness
+        {
+            get;
+            private set;
+        }
+
+        public ObservableCollection<string> AvailableColors
+        {
+            get;
+            private set;
+        }
+
+        public String SelectedShapeColor
+        {
+            get;
+            set;
+        }
+
         public ShapeType SelectedShapeType
         {
             get;
             set;
         }
 
-        // not sure if this int binding works
         public int SelectedStrokeThickness
         {
             get;
@@ -66,6 +84,12 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
             // all selected elements inside a composition
             this.selection = new Composite();
+
+            this.AvailableStrokeThickness = new ObservableCollection<int>();
+            this.AvailableColors = new ObservableCollection<string>();
+
+            typeof(Brushes).GetProperties().ToList().ForEach(I => this.AvailableColors.Add(I.Name));
+            Enumerable.Range(1, 10).ToList().ForEach(E => this.AvailableStrokeThickness.Add(E));
 
             // mouse commands
             this.MouseUpCommand = new RelayCommand<MouseEventArgs>(this.ExecuteMouseUp);
@@ -167,7 +191,9 @@ namespace GraphicsEditor.Business.Core.ViewModels
             // draw a new shape
             if (this.drawingElement == null && this.resizingElement == null && this.isMouseDown)
             {
-                var newShapeBase = shapeBase.Clone(Brushes.Black, this.SelectedStrokeThickness, this.SelectedShapeType, trackedMousePosition);
+                var brush = new BrushConverter().ConvertFromString(this.SelectedShapeColor) as SolidColorBrush;
+
+                var newShapeBase = shapeBase.Clone(brush, this.SelectedStrokeThickness, this.SelectedShapeType, trackedMousePosition);
                 var shape = (newShapeBase as ShapeBase).Shape;
 
                 var leaf = new Leaf(shape);

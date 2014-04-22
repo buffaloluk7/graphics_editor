@@ -47,8 +47,6 @@
     <Compile Include="Models\Composite.cs" />
     <Compile Include="Interfaces\IComponent.cs" />
     <Compile Include="Models\Leaf.cs" />
-    <Compile Include="Models\ShapeBase.cs" />
-    <Compile Include="Models\ShapeType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

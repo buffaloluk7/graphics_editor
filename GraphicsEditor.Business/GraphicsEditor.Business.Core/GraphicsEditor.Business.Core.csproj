@@ -82,6 +82,8 @@
   <ItemGroup>
     <Compile Include="Behaviours\InputBehaviour.cs" />
     <Compile Include="Behaviours\MouseBehaviour.cs" />
+    <Compile Include="Common\ShapeBase.cs" />
+    <Compile Include="Enums\ShapeType.cs" />
     <Compile Include="ServicesLocator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
@@ -90,9 +92,7 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Common\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\GraphicsEditor.Business.Domain\GraphicsEditor.Business.Domain.csproj">
       <Project>{31ab0eda-6f92-4173-9f71-fd2cf61680d3}</Project>

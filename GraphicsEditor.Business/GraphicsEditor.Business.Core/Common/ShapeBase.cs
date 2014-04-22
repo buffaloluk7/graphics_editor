@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GraphicsEditor.Business.Core.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -40,6 +41,7 @@ namespace GraphicsEditor.Business.Domain.Models
                 case ShapeType.Triangle:
                     newShape = new Polygon();
                     (newShape as Polygon).Points = new PointCollection() { new Point(position.X + 5, position.Y), new Point(position.X, position.Y + 10), new Point(position.X + 10, position.Y + 10) };
+                    newShape.Stretch = Stretch.Fill;
                     break;
             }
 
