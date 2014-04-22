@@ -1,5 +1,6 @@
 ﻿using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
+using GraphicsEditor.Business.Domain;
 using GraphicsEditor.Business.Domain.Models;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,8 @@ namespace GraphicsEditor.Business.Core.ViewModels
 
         private bool hoverOverAnyElement = false;
 
+        private ShapeBase shapeBase;
+
         private Dictionary<Shape, ComponentBase> shapeComponentRelationships;
 
         private Composite selection;
@@ -35,6 +38,19 @@ namespace GraphicsEditor.Business.Core.ViewModels
         #endregion
 
         public ObservableCollection<UIElement> CanvasElements
+        {
+            get;
+            set;
+        }
+
+        public ShapeType SelectedShapeType
+        {
+            get;
+            set;
+        }
+
+        // not sure if this int binding works
+        public int SelectedStrokeThickness
         {
             get;
             set;
@@ -67,6 +83,8 @@ namespace GraphicsEditor.Business.Core.ViewModels
             // add visual selection area and resize rectangle to canvas
             this.CanvasElements.Add(selection.SelectionArea);
             this.CanvasElements.Add(selection.ResizeArea);
+
+            this.shapeBase = new ShapeBase();
         }
 
         #region Commands
@@ -149,15 +167,8 @@ namespace GraphicsEditor.Business.Core.ViewModels
             // draw a new shape
             if (this.drawingElement == null && this.resizingElement == null && this.isMouseDown)
             {
-                var shape = new Ellipse
-                {
-                    Stroke = Brushes.Black,
-                    StrokeThickness = 1,
-                    Margin = new Thickness(trackedMousePosition.X - 10, trackedMousePosition.Y - 10, 0, 0),
-                    Width = 10,
-                    Height = 10,
-                    Fill = Brushes.Transparent
-                };
+                var newShapeBase = shapeBase.Clone(Brushes.Black, this.SelectedStrokeThickness, this.SelectedShapeType, trackedMousePosition);
+                var shape = (newShapeBase as ShapeBase).Shape;
 
                 var leaf = new Leaf(shape);
 
@@ -232,8 +243,45 @@ namespace GraphicsEditor.Business.Core.ViewModels
                case Key.LeftShift:
                    isShiftDown = true;
                    break;
+
+               case Key.Delete:
+                   //this.removeComponent(this.selection);
+                   break;
            }
         }
+
+        private void removeComponent(ComponentBase component)
+        {
+            if (component is Leaf)
+            {
+                this.CanvasElements.Remove((component as Leaf).Shape);
+            }
+            else if (component is Composite)
+            {
+                foreach(var child in (component as Composite).Components)
+                {
+                    this.removeComponent(child as ComponentBase);
+                }
+            }
+
+            if (this.selection.Components.Contains(component))
+            {
+                selection.Components.Remove(component);
+            }
+            
+            component.HideSelectionArea();
+
+            // do not remove seletion and resize area of our selection composite
+            if (component != this.selection)
+            {
+                this.CanvasElements.Remove(component.SelectionArea);
+                this.CanvasElements.Remove(component.ResizeArea);
+
+                this.shapeComponentRelationships.Remove(component.SelectionArea);
+                this.shapeComponentRelationships.Remove(component.ResizeArea);
+            }
+        }
+
         private void ExecuteKeyUp(KeyEventArgs e)
         {
             switch (e.Key)
